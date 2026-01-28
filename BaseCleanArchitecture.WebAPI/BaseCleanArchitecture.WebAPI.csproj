@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BaseCleanArchitecture.Application\BaseCleanArchitecture.Application.csproj" />
+    <ProjectReference Include="..\BaseCleanArchitecture.Contract\BaseCleanArchitecture.Contract.csproj" />
+    <ProjectReference Include="..\BaseCleanArchitecture.Domain\BaseCleanArchitecture.Domain.csproj" />
+    <ProjectReference Include="..\BaseCleanArchitecture.Infrastructure\BaseCleanArchitecture.Infrastructure.csproj" />
+    <ProjectReference Include="..\BaseCleanArchitecture.Persistence\BaseCleanArchitecture.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

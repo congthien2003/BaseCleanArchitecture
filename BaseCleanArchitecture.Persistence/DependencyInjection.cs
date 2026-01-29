@@ -1,4 +1,5 @@
-﻿using BaseCleanArchitecture.Domain.Abtractions.Repositories;
+﻿using BaseCleanArchitecture.Application.Common.Interfaces;
+using BaseCleanArchitecture.Domain.Abtractions.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,8 @@ public static class DependencyInjection
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddTransient<IUnitOfWork, UnitOfWork>();
+
+        services.AddTransient<ICurrentUserService, CurrentUserService>();
 
         return services;
     }

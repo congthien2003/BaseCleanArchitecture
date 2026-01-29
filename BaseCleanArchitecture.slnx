@@ -4,7 +4,7 @@
     <Project Path="BaseCleanArchitecture.Contract/BaseCleanArchitecture.Contract.csproj" />
     <Project Path="BaseCleanArchitecture.Domain/BaseCleanArchitecture.Domain.csproj" />
     <Project Path="BaseCleanArchitecture.Infrastructure/BaseCleanArchitecture.Infrastructure.csproj" />
-    <Project Path="BaseCleanArchitecture.Persistence/BaseCleanArchitecture.Persistence.csproj" />
+    <Project Path="BaseCleanArchitecture.Persistence/BaseCleanArchitecture.Persistence.SQLServer.csproj" />
     <Project Path="BaseCleanArchitecture.WebAPI/BaseCleanArchitecture.WebAPI.csproj" />
   </Folder>
 </Solution>

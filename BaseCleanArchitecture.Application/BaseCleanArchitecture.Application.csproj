@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BaseCleanArchitecture.Domain\BaseCleanArchitecture.Domain.csproj" />
+    <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\" />
+    <ProjectReference Include="..\BaseCleanArchitecture.Domain\BaseCleanArchitecture.Domain.csproj" />
   </ItemGroup>
 
 </Project>

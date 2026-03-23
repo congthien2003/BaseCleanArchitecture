@@ -1,7 +1,11 @@
+using BaseCleanArchitecture.Application;
+using BaseCleanArchitecture.Application.Behaviors;
 using BaseCleanArchitecture.Infrastructure;
 using BaseCleanArchitecture.Persistence;
-using Serilog;
+using MediatR;
 using Scalar.AspNetCore;
+using Serilog;
+using System.Reflection;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -34,8 +38,11 @@ try
     builder.Services.AddOpenApi();
 
     builder.Services
+        .AddApplication(builder.Configuration)
         .AddInfrastructure(builder.Configuration)
         .AddPersistenceServices(builder.Configuration);
+
+    builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
     var app = builder.Build();
 

@@ -1,4 +1,5 @@
-﻿using BaseCleanArchitecture.Application.Features.Categories.Models;
+﻿using BaseCleanArchitecture.Application.Common.Interfaces;
+using BaseCleanArchitecture.Application.Features.Categories.Models;
 using MediatR;
 
 namespace BaseCleanArchitecture.Application.Features.Categories.Commands

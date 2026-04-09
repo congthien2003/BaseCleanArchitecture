@@ -1,14 +1,12 @@
-﻿using MediatR;
-
-namespace BaseCleanArchitecture.Domain.Abtractions
+﻿namespace BaseCleanArchitecture.Contract.ExternalEvents.Abstractions
 {
-    public abstract class DomainEventBase : INotification
+    public abstract class BaseExternalEvent
     {
         public Guid EventId { get; private set; }
 
         public DateTimeOffset OccurredOn { get; private set; }
 
-        protected DomainEventBase()
+        protected BaseExternalEvent()
         {
             EventId = Guid.NewGuid();
             OccurredOn = DateTimeOffset.UtcNow;

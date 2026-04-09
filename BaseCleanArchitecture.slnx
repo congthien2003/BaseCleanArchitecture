@@ -1,10 +1,10 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="BaseCleanArchitecture.Application/BaseCleanArchitecture.Application.csproj" />
-    <Project Path="BaseCleanArchitecture.Contract/BaseCleanArchitecture.Contract.csproj" />
-    <Project Path="BaseCleanArchitecture.Domain/BaseCleanArchitecture.Domain.csproj" />
-    <Project Path="BaseCleanArchitecture.Infrastructure/BaseCleanArchitecture.Infrastructure.csproj" />
-    <Project Path="BaseCleanArchitecture.Persistence/BaseCleanArchitecture.Persistence.SQLServer.csproj" />
-    <Project Path="BaseCleanArchitecture.WebAPI/BaseCleanArchitecture.WebAPI.csproj" />
+    <Project Path="src/BaseCleanArchitecture.Application/BaseCleanArchitecture.Application.csproj" />
+    <Project Path="src/BaseCleanArchitecture.Contract/BaseCleanArchitecture.Contract.csproj" />
+    <Project Path="src/BaseCleanArchitecture.Domain/BaseCleanArchitecture.Domain.csproj" />
+    <Project Path="src/BaseCleanArchitecture.Infrastructure/BaseCleanArchitecture.Infrastructure.csproj" />
+    <Project Path="src/BaseCleanArchitecture.Persistence/BaseCleanArchitecture.Persistence.SQLServer.csproj" />
+    <Project Path="src/BaseCleanArchitecture.WebAPI/BaseCleanArchitecture.WebAPI.csproj" />
   </Folder>
 </Solution>

@@ -2,6 +2,7 @@ using BaseCleanArchitecture.Application;
 using BaseCleanArchitecture.Application.Behaviors;
 using BaseCleanArchitecture.Infrastructure;
 using BaseCleanArchitecture.Persistence;
+using BaseCleanArchitecture.WebAPI.Middleware;
 using MediatR;
 using Scalar.AspNetCore;
 using Serilog;
@@ -37,6 +38,9 @@ try
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
+    builder.Services.AddProblemDetails();
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
     builder.Services
         .AddApplication(builder.Configuration)
         .AddInfrastructure(builder.Configuration)
@@ -58,6 +62,8 @@ try
                 .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
         });
     }
+
+    app.UseExceptionHandler();
 
     app.UseHttpsRedirection();
 

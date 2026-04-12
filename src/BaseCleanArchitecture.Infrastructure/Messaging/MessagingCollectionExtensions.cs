@@ -3,6 +3,7 @@ using BaseCleanArchitecture.Infrastructure.Extensions.Rebus;
 using BaseCleanArchitecture.Infrastructure.Messaging.RabbitMQ;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Rebus.Config;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,8 +31,17 @@ namespace BaseCleanArchitecture.Infrastructure.Messaging
             if (messagingOptions.UseRabbitMQ)
             {
                 services.AddRebusServices(messagingOptions.RabbitMQOptions);
+                services.AddRebus(configure =>
+                {
+                    var client = $"amqp://{messagingOptions.RabbitMQOptions.UserName}:{messagingOptions.RabbitMQOptions.Password}@{messagingOptions.RabbitMQOptions.HostName}:{messagingOptions.RabbitMQOptions.Port}";
+                    var configurer = configure
+                        .Logging(l => l.ColoredConsole())
+                        .Transport(t => t.UseRabbitMqAsOneWayClient(client));
+
+                    return configurer;
+                });
                 services.AddSingleton<IMessagingService, RabbitMQMessagingService>();
-            }
+            } else if ()
             else
             {
                 throw new NotSupportedException($"Messaging provider '{messagingOptions.Provider}' is not supported.");

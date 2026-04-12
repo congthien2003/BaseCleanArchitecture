@@ -3,14 +3,14 @@ using BaseCleanArchitecture.Contract.ExternalEvents.Abstractions;
 using Microsoft.Extensions.Logging;
 using Rebus.Bus;
 
-namespace BaseCleanArchitecture.Infrastructure.Services.Events
+namespace BaseCleanArchitecture.Infrastructure.Messaging.RabbitMQ
 {
-    public class IntegrationEventPublisher : IMessagingService
+    public class RabbitMQMessagingService : IMessagingService
     {
-        private readonly ILogger<IntegrationEventPublisher> _logger;
+        private readonly ILogger<RabbitMQMessagingService> _logger;
         private readonly IBus _bus;
 
-        public IntegrationEventPublisher(ILogger<IntegrationEventPublisher> logger, IBus bus)
+        public RabbitMQMessagingService(ILogger<RabbitMQMessagingService> logger, IBus bus)
         {
             _logger = logger;
             _bus = bus;

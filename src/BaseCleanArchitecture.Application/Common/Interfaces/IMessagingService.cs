@@ -2,7 +2,7 @@
 
 namespace BaseCleanArchitecture.Application.Common.Interfaces
 {
-    public interface IIntegrationEventPublisher
+    public interface IMessagingService
     {
         Task Publish(BaseExternalEvent @event, CancellationToken cancellationToken);
     }

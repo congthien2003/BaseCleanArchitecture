@@ -11,7 +11,7 @@ namespace BaseCleanArchitecture.Infrastructure
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             // Register infrastructure services here
-            services.AddRebusServices(configuration);
+            //services.AddRebusServices(configuration);
 
             // Domain Event Dispatcher
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();

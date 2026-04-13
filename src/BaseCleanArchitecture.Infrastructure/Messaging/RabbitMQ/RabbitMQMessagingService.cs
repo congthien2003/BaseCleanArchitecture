@@ -16,7 +16,7 @@ namespace BaseCleanArchitecture.Infrastructure.Messaging.RabbitMQ
             _bus = bus;
         }
 
-        public async Task Publish(BaseExternalEvent @event, CancellationToken cancellationToken)
+        public async Task Publish<T>(T @event, CancellationToken cancellationToken) where T : BaseExternalEvent
         {
             _logger.LogInformation("Publishing integration event: {EventId} at {OccurredOn}", @event.EventId, @event.OccurredOn);
 

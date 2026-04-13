@@ -1,5 +1,5 @@
 ﻿using BaseCleanArchitecture.Application.Common.Interfaces;
-using BaseCleanArchitecture.Infrastructure.Extensions.Rebus;
+using BaseCleanArchitecture.Infrastructure.Messaging.Kafka;
 using BaseCleanArchitecture.Infrastructure.Messaging.RabbitMQ;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +30,7 @@ namespace BaseCleanArchitecture.Infrastructure.Messaging
 
             if (messagingOptions.UseRabbitMQ)
             {
-                services.AddRebusServices(messagingOptions.RabbitMQOptions);
+                Console.WriteLine("Use RabbitMQ for Messaging");
                 services.AddRebus(configure =>
                 {
                     var client = $"amqp://{messagingOptions.RabbitMQOptions.UserName}:{messagingOptions.RabbitMQOptions.Password}@{messagingOptions.RabbitMQOptions.HostName}:{messagingOptions.RabbitMQOptions.Port}";
@@ -41,7 +41,11 @@ namespace BaseCleanArchitecture.Infrastructure.Messaging
                     return configurer;
                 });
                 services.AddSingleton<IMessagingService, RabbitMQMessagingService>();
-            } else if ()
+            } else if (messagingOptions.UseKafka)
+            {
+                Console.WriteLine("Use Kafka for Messaging");
+                services.AddSingleton<IMessagingService, KafkaMessagingService>();
+            }
             else
             {
                 throw new NotSupportedException($"Messaging provider '{messagingOptions.Provider}' is not supported.");

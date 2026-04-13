@@ -4,6 +4,6 @@ namespace BaseCleanArchitecture.Application.Common.Interfaces
 {
     public interface IMessagingService
     {
-        Task Publish(BaseExternalEvent @event, CancellationToken cancellationToken);
+        Task Publish<T>(T @event, CancellationToken cancellationToken) where T : BaseExternalEvent;
     }
 }

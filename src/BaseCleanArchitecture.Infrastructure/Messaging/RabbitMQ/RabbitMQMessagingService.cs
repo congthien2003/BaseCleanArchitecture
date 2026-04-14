@@ -3,20 +3,20 @@ using BaseCleanArchitecture.Contract.ExternalEvents.Abstractions;
 using Microsoft.Extensions.Logging;
 using Rebus.Bus;
 
-namespace BaseCleanArchitecture.Infrastructure.Services.Events
+namespace BaseCleanArchitecture.Infrastructure.Messaging.RabbitMQ
 {
-    public class IntegrationEventPublisher : IIntegrationEventPublisher
+    public class RabbitMQMessagingService : IMessagingService
     {
-        private readonly ILogger<IntegrationEventPublisher> _logger;
+        private readonly ILogger<RabbitMQMessagingService> _logger;
         private readonly IBus _bus;
 
-        public IntegrationEventPublisher(ILogger<IntegrationEventPublisher> logger, IBus bus)
+        public RabbitMQMessagingService(ILogger<RabbitMQMessagingService> logger, IBus bus)
         {
             _logger = logger;
             _bus = bus;
         }
 
-        public async Task Publish(BaseExternalEvent @event, CancellationToken cancellationToken)
+        public async Task Publish<T>(T @event, CancellationToken cancellationToken) where T : BaseExternalEvent
         {
             _logger.LogInformation("Publishing integration event: {EventId} at {OccurredOn}", @event.EventId, @event.OccurredOn);
 

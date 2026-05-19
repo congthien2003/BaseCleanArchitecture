@@ -6,7 +6,7 @@ namespace BaseCleanArchitecture.Infrastructure.Email
 {
     public static class EmailExtension
     {
-        public static void AddEmailService(this IServiceCollection services, IConfiguration configuration)
+        public static void AddEmailServiceConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             var emailSection = configuration.GetSection(nameof(EmailOptions));
 

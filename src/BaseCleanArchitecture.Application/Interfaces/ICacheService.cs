@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace BaseCleanArchitecture.Application.Interfaces
 {
     public interface ICacheService
     {
-        void Cache(string key, string value);
+        Task<T> GetAsync<T>(string key, CancellationToken cancellationToken = default);
+        Task SetAsync<T>(string key, T value, TimeSpan? expiration = null, CancellationToken cancellationToken = default);
+        Task RemoveByPrefix(string prefix, CancellationToken cancellationToken = default);
     }
 }

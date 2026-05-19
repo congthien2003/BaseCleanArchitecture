@@ -1,4 +1,5 @@
 ﻿using BaseCleanArchitecture.Application.Common.Interfaces;
+using BaseCleanArchitecture.Infrastructure.Email;
 using BaseCleanArchitecture.Infrastructure.Messaging;
 using BaseCleanArchitecture.Infrastructure.Services.Events;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +13,10 @@ namespace BaseCleanArchitecture.Infrastructure
         {
             // Register infrastructure services here
             services.AddMessagingConfiguration(configuration);
+
+            // Email Service
+            services.AddEmailService(configuration);
+
             // Domain Event Dispatcher
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 

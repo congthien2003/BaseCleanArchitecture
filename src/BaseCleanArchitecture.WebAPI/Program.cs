@@ -43,7 +43,7 @@ try
 
     builder.Services
         .AddApplication(builder.Configuration)
-        .AddInfrastructure(builder.Configuration)
+        .AddInfrastructure(builder.Configuration, builder.Logging)
         .AddPersistenceServices(builder.Configuration);
 
     builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));

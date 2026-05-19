@@ -41,6 +41,9 @@ try
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+    // Health checks
+    builder.Services.AddHealthChecks();
+
     builder.Services
         .AddApplication(builder.Configuration)
         .AddInfrastructure(builder.Configuration, builder.Logging)
@@ -71,6 +74,12 @@ try
 
     app.MapControllers();
 
+    // Health check endpoint (used by load-balancers and OTel trace filter)
+    app.MapHealthChecks("/health");
+
+    // Prometheus metrics scraping endpoint (used by Prometheus docker service)
+    app.MapPrometheusScrapingEndpoint("/metrics");
+
     // Redirect root to Scalar API documentation
     app.MapGet("/", () => Results.Redirect("/scalar/v1")).ExcludeFromDescription();
 
@@ -84,3 +93,4 @@ finally
 {
     Log.CloseAndFlush();
 }
+

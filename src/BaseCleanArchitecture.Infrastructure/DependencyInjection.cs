@@ -25,8 +25,8 @@ namespace BaseCleanArchitecture.Infrastructure
             // Caching
             services.AddCachingConfiguration();
 
-            // Logging
-            loggingBuilder.AddOpenTelemetryLogging();
+            // OpenTelemetry — tracing, metrics, and logging (OTLP + Prometheus)
+            services.AddOpenTelemetryObservability(loggingBuilder, configuration);
 
             // Domain Event Dispatcher
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();

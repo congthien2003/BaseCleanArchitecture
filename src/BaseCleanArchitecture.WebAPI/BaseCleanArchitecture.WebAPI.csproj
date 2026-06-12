@@ -19,7 +19,7 @@
     <ProjectReference Include="..\BaseCleanArchitecture.Contract\BaseCleanArchitecture.Contract.csproj" />
     <ProjectReference Include="..\BaseCleanArchitecture.Domain\BaseCleanArchitecture.Domain.csproj" />
     <ProjectReference Include="..\BaseCleanArchitecture.Infrastructure\BaseCleanArchitecture.Infrastructure.csproj" />
-    <ProjectReference Include="..\BaseCleanArchitecture.Persistence\BaseCleanArchitecture.Persistence.SQLServer.csproj" />
+    <ProjectReference Include="..\BaseCleanArchitecture.Persistence\BaseCleanArchitecture.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

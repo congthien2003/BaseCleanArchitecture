@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "dotnet-patterns": {
+      "source": "affaan-m/ECC",
+      "sourceType": "github",
+      "skillPath": "skills/dotnet-patterns/SKILL.md",
+      "computedHash": "093acce04bc58e34881af59c839829cbedf6816a97ca268fe5037d2d4f12cfa7"
+    }
+  }
+}

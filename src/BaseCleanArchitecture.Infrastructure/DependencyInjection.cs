@@ -1,10 +1,12 @@
-﻿using BaseCleanArchitecture.Application.Common.Interfaces;
-using BaseCleanArchitecture.Application.Interfaces;
+using BaseCleanArchitecture.Application.Abstractions.Authentication;
+using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
+using BaseCleanArchitecture.Infrastructure.Auth;
 using BaseCleanArchitecture.Infrastructure.Caching;
 using BaseCleanArchitecture.Infrastructure.Email;
 using BaseCleanArchitecture.Infrastructure.Messaging;
 using BaseCleanArchitecture.Infrastructure.OpenTelemetry;
 using BaseCleanArchitecture.Infrastructure.Services.Events;
+using BaseCleanArchitecture.Persistence;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,9 @@ namespace BaseCleanArchitecture.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, ILoggingBuilder loggingBuilder)
         {
+            // Auth (JWT)
+            services.AddAuthServices(configuration);
+
             // Register infrastructure services here
             services.AddMessagingConfiguration(configuration);
 
@@ -30,6 +35,9 @@ namespace BaseCleanArchitecture.Infrastructure
 
             // Domain Event Dispatcher
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+
+            services.AddTransient<ICurrentUserService, CurrentUserService>();
+            services.AddHttpContextAccessor();
 
             return services;
         }

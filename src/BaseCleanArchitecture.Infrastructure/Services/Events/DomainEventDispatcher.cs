@@ -1,4 +1,4 @@
-﻿using BaseCleanArchitecture.Application.Common.Interfaces;
+﻿using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
 using BaseCleanArchitecture.Domain.Abtractions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,4 +1,5 @@
-﻿using BaseCleanArchitecture.Application.Common.Interfaces;
+﻿using BaseCleanArchitecture.Application.Abstractions.Authentication;
+using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
 using BaseCleanArchitecture.Domain.Abtractions;
 using BaseCleanArchitecture.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

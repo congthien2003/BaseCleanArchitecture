@@ -7,7 +7,7 @@ namespace BaseCleanArchitecture.Persistence.Repositories
     public class RepositoryBase<TEntity, TKey> : IRepositoryBase<TEntity, TKey>
         where TEntity : EntityBase<TKey>
     {
-        private readonly ApplicationDbContext _context;
+        protected readonly ApplicationDbContext _context;
 
         public RepositoryBase(ApplicationDbContext context)
         {

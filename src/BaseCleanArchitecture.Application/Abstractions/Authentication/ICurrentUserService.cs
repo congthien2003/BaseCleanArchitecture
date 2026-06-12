@@ -1,6 +1,6 @@
 ﻿using BaseCleanArchitecture.Application.Common.Models;
 
-namespace BaseCleanArchitecture.Application.Common.Interfaces
+namespace BaseCleanArchitecture.Application.Abstractions.Authentication
 {
     public interface ICurrentUserService
     {

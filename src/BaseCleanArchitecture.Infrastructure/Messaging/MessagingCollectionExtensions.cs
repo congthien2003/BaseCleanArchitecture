@@ -1,4 +1,4 @@
-﻿using BaseCleanArchitecture.Application.Common.Interfaces;
+﻿using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
 using BaseCleanArchitecture.Infrastructure.Messaging.Kafka;
 using BaseCleanArchitecture.Infrastructure.Messaging.RabbitMQ;
 using Microsoft.Extensions.Configuration;

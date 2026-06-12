@@ -1,4 +1,4 @@
-namespace BaseCleanArchitecture.Application.Interfaces
+namespace BaseCleanArchitecture.Application.Abstractions.Infrastructures
 {
     public interface ICacheKeyPrefixService
     {

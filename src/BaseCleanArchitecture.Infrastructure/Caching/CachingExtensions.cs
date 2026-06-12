@@ -1,4 +1,4 @@
-﻿using BaseCleanArchitecture.Application.Interfaces;
+﻿using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BaseCleanArchitecture.Infrastructure.Caching

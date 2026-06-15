@@ -12,9 +12,9 @@ namespace BaseCleanArchitecture.Infrastructure.Messaging
 
         public string Provider { get; set; } = "RabbitMQ";
 
-        public RabbitMQOptions RabbitMQOptions { get; set; }
+        public RabbitMQOptions? RabbitMQOptions { get; set; }
 
-        public KafkaOptions KafkaOptions { get; set; }
+        public KafkaOptions? KafkaOptions { get; set; }
 
         public bool UseRabbitMQ => Provider.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase);
 

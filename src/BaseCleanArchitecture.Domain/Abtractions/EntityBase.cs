@@ -4,7 +4,7 @@ namespace BaseCleanArchitecture.Domain.Abtractions
 {
     public abstract class EntityBase<TKey> : IEntityBase<TKey>
     {
-        public TKey Id { get; set; }
+        public required TKey Id { get; set; }
 
         private readonly List<DomainEventBase> _domainEvents = new();
 

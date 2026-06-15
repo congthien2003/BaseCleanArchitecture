@@ -6,11 +6,11 @@ namespace BaseCleanArchitecture.Infrastructure.Email
 {
     public class EmailOptions
     {
-        public string DisplayName { get; set; }
+        public string DisplayName { get; set; } = "Base Clean Architecture";
 
-        public string EmailAddress { get; set; }
+        public string EmailAddress { get; set; } = "sabo@gmail.com";
 
-        public string Password { get; set; }
+        public string Password { get; set; } = "password";
 
         public EmailOptions() { }
     }

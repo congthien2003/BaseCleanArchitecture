@@ -38,7 +38,7 @@ namespace BaseCleanArchitecture.Persistence.Repositories
 
         public async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
         {
-            return await _context.Set<TEntity>().FirstOrDefaultAsync(x => x.Id.Equals(id), cancellationToken);
+            return await _context.Set<TEntity>().FirstOrDefaultAsync(x => x.Id!.Equals(id), cancellationToken);
         }
 
         public Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)

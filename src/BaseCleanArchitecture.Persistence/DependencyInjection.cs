@@ -1,5 +1,6 @@
-﻿using BaseCleanArchitecture.Application.Common.Interfaces;
 using BaseCleanArchitecture.Domain.Abtractions.Repositories;
+using BaseCleanArchitecture.Domain.Entities;
+using BaseCleanArchitecture.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,9 +16,11 @@ public static class DependencyInjection
 
         services.AddTransient<IUnitOfWork, UnitOfWork>();
 
-        services.AddTransient<ICurrentUserService, CurrentUserService>();
+        // Register repositories
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRepositoryBase<Role, Guid>, RepositoryBase<Role, Guid>>();
+        services.AddScoped<IRepositoryBase<UserRole, Guid>, RepositoryBase<UserRole, Guid>>();
 
         return services;
     }
 }
-

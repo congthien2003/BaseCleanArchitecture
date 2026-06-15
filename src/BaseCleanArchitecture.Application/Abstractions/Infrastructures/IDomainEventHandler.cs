@@ -1,6 +1,6 @@
 ﻿using BaseCleanArchitecture.Domain.Abtractions;
 
-namespace BaseCleanArchitecture.Application.Common.Interfaces
+namespace BaseCleanArchitecture.Application.Abstractions.Infrastructures
 {
     /// <summary>
     /// Handler for domain events

@@ -1,4 +1,4 @@
-﻿using BaseCleanArchitecture.Application.Common.Interfaces;
+﻿using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
 using BaseCleanArchitecture.Contract.ExternalEvents.Abstractions;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;

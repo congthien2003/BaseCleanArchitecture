@@ -1,6 +1,7 @@
 using BaseCleanArchitecture.Application;
 using BaseCleanArchitecture.Application.Behaviors;
 using BaseCleanArchitecture.Infrastructure;
+using BaseCleanArchitecture.Infrastructure.Auth;
 using BaseCleanArchitecture.Persistence;
 using BaseCleanArchitecture.WebAPI.Middleware;
 using MediatR;
@@ -66,6 +67,8 @@ try
     app.UseExceptionHandler();
 
     app.UseHttpsRedirection();
+
+    app.UseAuthentication();
 
     app.UseAuthorization();
 

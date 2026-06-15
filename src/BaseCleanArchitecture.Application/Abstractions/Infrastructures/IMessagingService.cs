@@ -1,6 +1,6 @@
 ﻿using BaseCleanArchitecture.Contract.ExternalEvents.Abstractions;
 
-namespace BaseCleanArchitecture.Application.Common.Interfaces
+namespace BaseCleanArchitecture.Application.Abstractions.Infrastructures
 {
     public interface IMessagingService
     {

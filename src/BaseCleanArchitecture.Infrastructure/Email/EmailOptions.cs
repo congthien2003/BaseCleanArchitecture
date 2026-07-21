@@ -12,6 +12,8 @@ namespace BaseCleanArchitecture.Infrastructure.Email
 
         public string Password { get; set; } = "password";
 
+        public string ResendApiKey { get; set; } = "";
+
         public EmailOptions() { }
     }
 }

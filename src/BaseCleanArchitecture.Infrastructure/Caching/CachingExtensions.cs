@@ -7,6 +7,7 @@ namespace BaseCleanArchitecture.Infrastructure.Caching
     {
         public static IServiceCollection AddCachingConfiguration(this IServiceCollection services)
         {
+            services.AddMemoryCache();
             services.AddSingleton<ICacheKeyPrefixService, CacheKeyPrefixService>();
             services.AddSingleton<ICacheService, MemoryService>();
             return services;

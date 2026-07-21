@@ -1,6 +1,7 @@
 ﻿using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Resend;
 
 namespace BaseCleanArchitecture.Infrastructure.Email
 {
@@ -19,7 +20,18 @@ namespace BaseCleanArchitecture.Infrastructure.Email
                 throw new InvalidOperationException("Email options are not configured properly.");
             }
 
+            services.AddResendConfig(emailOptions);
             services.AddScoped<IEmailService, EmailService>();
+        }
+
+        public static void AddResendConfig(this IServiceCollection services, EmailOptions emailOptions)
+        {
+            services.AddHttpClient<ResendClient>();
+            services.Configure<ResendClientOptions>(o =>
+            {
+                o.ApiToken = emailOptions.ResendApiKey;
+            });
+            services.AddTransient<IResend, ResendClient>();
         }
     }
 }

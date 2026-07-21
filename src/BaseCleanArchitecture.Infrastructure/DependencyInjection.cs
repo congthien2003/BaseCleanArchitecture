@@ -22,7 +22,7 @@ namespace BaseCleanArchitecture.Infrastructure
             services.AddAuthServices(configuration);
 
             // Register infrastructure services here
-            services.AddMessagingConfiguration(configuration);
+            //services.AddMessagingConfiguration(configuration);
 
             // Email Service
             services.AddEmailServiceConfiguration(configuration);

@@ -26,7 +26,7 @@ namespace BaseCleanArchitecture.WebAPI.Controllers.Features
             // Handle the webhook payload here
             // You can deserialize the payload into a specific model if needed
             // For demonstration purposes, we'll just return a success response
-            await _mediator.Publish(new ReceivedPayosWebhookCommandRequest()
+            await _mediator.Send(new ReceivedPayosWebhookCommandRequest()
             {
                 Code = "00",
                 Message = "success",

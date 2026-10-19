@@ -1,4 +1,5 @@
 ﻿using BaseCleanArchitecture.Domain.Abtractions.Entities;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
 
 namespace BaseCleanArchitecture.Domain.Abtractions
@@ -7,11 +8,13 @@ namespace BaseCleanArchitecture.Domain.Abtractions
     {
         public TKey Id { get; set; }
 
+        [NotMapped]
         private readonly List<DomainEventBase> _domainEvents = new();
 
         /// <summary>
         /// Domain events that have been raised by this entity
         /// </summary>
+        [NotMapped]
         public IReadOnlyCollection<DomainEventBase> DomainEvents => _domainEvents.AsReadOnly();
 
         protected EntityBase(TKey id)

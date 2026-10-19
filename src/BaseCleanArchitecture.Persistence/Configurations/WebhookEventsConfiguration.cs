@@ -7,11 +7,11 @@ using System.Text;
 
 namespace BaseCleanArchitecture.Persistence.Configurations
 {
-    public class WebhookLogsConfiguration : IEntityTypeConfiguration<WebhookEvent>
+    public class WebhookEventsConfiguration : IEntityTypeConfiguration<WebhookEvent>
     {
         public void Configure(EntityTypeBuilder<WebhookEvent> builder)
         {
-            builder.ToTable("WebhookLogs");
+            builder.ToTable("WebhookEvents", "webhooks");
 
             builder.HasKey(wl => wl.Id);
 

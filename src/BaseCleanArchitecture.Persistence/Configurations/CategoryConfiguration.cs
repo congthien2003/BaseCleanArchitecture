@@ -8,7 +8,7 @@ namespace BaseCleanArchitecture.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Category> builder)
         {
-            builder.ToTable("Category");
+            builder.ToTable("Category", "catalog");
 
             builder.HasKey(c => c.Id);
 

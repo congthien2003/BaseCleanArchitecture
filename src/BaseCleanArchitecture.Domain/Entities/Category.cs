@@ -7,5 +7,10 @@ namespace BaseCleanArchitecture.Domain.Entities
         public string Name { get; set; } = null!;
 
         public string Description { get; set; } = null!;
+
+        public Category() : base(Guid.CreateVersion7())
+        {
+
+        }
     }
 }

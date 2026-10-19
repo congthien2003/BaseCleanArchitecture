@@ -40,7 +40,6 @@ public sealed class AuthService : IAuthService
 
         var user = new User
         {
-            Id = Guid.NewGuid(),
             Username = dto.Username,
             Email = dto.Email,
             PasswordHash = hash,

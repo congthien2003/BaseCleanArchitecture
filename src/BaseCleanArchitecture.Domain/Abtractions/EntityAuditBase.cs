@@ -10,5 +10,9 @@ namespace BaseCleanArchitecture.Domain.Abtractions
         public Guid? CreatedBy { get; set; }
         public Guid? UpdatedBy { get; set; }
         public DateTimeOffset? DeletedAt { get; set; }
+
+        protected EntityAuditBase(TKey id) : base(id)
+        {
+        }
     }
 }

@@ -9,4 +9,8 @@ public class UserRole : EntityAuditBase<Guid>
 
     public User User { get; set; } = null!;
     public Role Role { get; set; } = null!;
+
+    public UserRole() : base(Guid.NewGuid())
+    {
+    }
 }

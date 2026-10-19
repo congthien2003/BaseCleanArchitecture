@@ -20,6 +20,8 @@ namespace BaseCleanArchitecture.Persistence
 
         public DbSet<Category> Category { get; set; }
 
+        public DbSet<WebhookEvent> WebhookLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -1,10 +1,11 @@
 ﻿using BaseCleanArchitecture.Domain.Abtractions.Entities;
+using System.Security.Cryptography;
 
 namespace BaseCleanArchitecture.Domain.Abtractions
 {
     public abstract class EntityBase<TKey> : IEntityBase<TKey>
     {
-        public required TKey Id { get; set; }
+        public TKey Id { get; set; }
 
         private readonly List<DomainEventBase> _domainEvents = new();
 
@@ -12,6 +13,11 @@ namespace BaseCleanArchitecture.Domain.Abtractions
         /// Domain events that have been raised by this entity
         /// </summary>
         public IReadOnlyCollection<DomainEventBase> DomainEvents => _domainEvents.AsReadOnly();
+
+        protected EntityBase(TKey id)
+        {
+            Id = id;
+        }
 
         /// <summary>
         /// Add a domain event to the entity

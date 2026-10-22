@@ -15,20 +15,10 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-        
-        // Register Domain Service
-        services.AddDomainServices();
 
         // Register application services here
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IAuthService, AuthService>();
-        return services;
-    }
-
-    public static IServiceCollection AddDomainServices(this IServiceCollection services)
-    {
-        // Register domain services here
-        services.AddScoped<IBaseDomainService, BaseDomainService>();
         return services;
     }
 }

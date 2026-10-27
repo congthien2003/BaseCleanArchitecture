@@ -1,4 +1,4 @@
-namespace BaseCleanArchitecture.WebAPI.Middleware;
+namespace BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 
 public static class AuditHttpContextKeys
 {

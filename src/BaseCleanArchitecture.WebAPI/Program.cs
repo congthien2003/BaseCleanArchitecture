@@ -4,6 +4,7 @@ using BaseCleanArchitecture.Infrastructure;
 using BaseCleanArchitecture.Infrastructure.Auth;
 using BaseCleanArchitecture.Persistence;
 using BaseCleanArchitecture.WebAPI.Middleware;
+using BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 using MediatR;
 using Scalar.AspNetCore;
 using Serilog;

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BaseCleanArchitecture.WebAPI.Middleware;
+namespace BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 
 public static class AuditErrorMessage
 {

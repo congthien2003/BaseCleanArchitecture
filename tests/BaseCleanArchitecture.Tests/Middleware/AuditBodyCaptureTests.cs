@@ -1,5 +1,5 @@
 using System.Text;
-using BaseCleanArchitecture.WebAPI.Middleware;
+using BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 
 namespace BaseCleanArchitecture.Tests.Middleware;
 

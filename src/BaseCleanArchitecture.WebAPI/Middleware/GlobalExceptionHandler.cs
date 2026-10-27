@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BaseCleanArchitecture.WebAPI.Middleware;

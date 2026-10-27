@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Diagnostics;
 using System.Text.Json;
 using BaseCleanArchitecture.Application.Abstractions.Auditing;
@@ -8,7 +7,7 @@ using BaseCleanArchitecture.Domain.Enums;
 using BaseCleanArchitecture.Infrastructure.Auditing;
 using Microsoft.Extensions.Options;
 
-namespace BaseCleanArchitecture.WebAPI.Middleware;
+namespace BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 
 /// <summary>
 /// Records one AuditLog per request. Must be registered before UseExceptionHandler so it sees the final response.
@@ -75,11 +74,6 @@ public sealed class AuditLoggingMiddleware
     {
         try
         {
-            if (!AuditBodyCapture.RequestHasBody(request))
-            {
-                return new CapturedRequest([], 0);
-            }
-
             // Binary uploads are neither read nor buffered; only their declared size is kept for the placeholder.
             if (!AuditBodyCapture.IsTextContentType(request.ContentType))
             {
@@ -88,31 +82,22 @@ public sealed class AuditLoggingMiddleware
 
             request.EnableBuffering();
 
-            // Grows with the bytes actually received; never sized by MaxBodyBytes up front.
-            using var captured = new MemoryStream();
-            var chunk = ArrayPool<byte>.Shared.Rent(8192);
-            try
+            var buffer = new byte[maxBytes];
+            var read = 0;
+            int n;
+            while (read < maxBytes && (n = await request.Body.ReadAsync(buffer.AsMemory(read, maxBytes - read))) > 0)
             {
-                int n;
-                while (captured.Length < maxBytes
-                    && (n = await request.Body.ReadAsync(chunk.AsMemory(0, (int)Math.Min(chunk.Length, maxBytes - captured.Length)))) > 0)
-                {
-                    captured.Write(chunk, 0, n);
-                }
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(chunk);
+                read += n;
             }
 
-            var total = captured.Length;
-            if (total == maxBytes)
+            var total = (long)read;
+            if (read == maxBytes)
             {
                 total = request.ContentLength ?? total + await CountRemainingAsync(request.Body);
             }
 
             request.Body.Position = 0;
-            return new CapturedRequest(captured.ToArray(), total);
+            return new CapturedRequest(buffer[..read], total);
         }
         catch (Exception ex)
         {
@@ -169,10 +154,10 @@ public sealed class AuditLoggingMiddleware
             AuditType = exception is not null ? AuditType.Exception : AuditType.Activity,
             StatusCode = statusCode,
             ErrorMessage = errorMessage,
-            HttpMethod = Sanitize(context.Request.Method, 10),
-            Path = Sanitize(context.Request.PathBase.Add(context.Request.Path).Value ?? string.Empty, 2048),
+            HttpMethod = Truncate(context.Request.Method, 10),
+            Path = Truncate(context.Request.PathBase.Add(context.Request.Path).Value ?? string.Empty, 2048),
             UserId = user.Id == Guid.Empty ? null : user.Id,
-            Username = string.IsNullOrEmpty(user.Username) ? null : Sanitize(user.Username, 256),
+            Username = string.IsNullOrEmpty(user.Username) ? null : user.Username,
             DurationMs = durationMs,
             RequestBody = requestText is null ? null : encryptor.Encrypt(requestText),
             ResponseBody = responseText is null ? null : encryptor.Encrypt(responseText),
@@ -183,10 +168,5 @@ public sealed class AuditLoggingMiddleware
         };
     }
 
-    // Plaintext columns: drop U+0000 (PostgreSQL rejects it) and fit the column, so one odd request cannot poison a batch.
-    private static string Sanitize(string value, int max)
-    {
-        value = value.Replace("\0", string.Empty);
-        return value.Length <= max ? value : value[..max];
-    }
+    private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max];
 }

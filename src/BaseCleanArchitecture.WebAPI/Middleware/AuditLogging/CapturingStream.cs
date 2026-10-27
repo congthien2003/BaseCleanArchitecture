@@ -1,4 +1,4 @@
-namespace BaseCleanArchitecture.WebAPI.Middleware;
+namespace BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 
 /// <summary>
 /// Write-through wrapper: everything goes to the real response stream immediately, while the first

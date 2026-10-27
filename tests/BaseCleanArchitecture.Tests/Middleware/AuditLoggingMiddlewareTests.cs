@@ -218,4 +218,41 @@ public class AuditLoggingMiddlewareTests
         await Task.Delay(100);
         Assert.Equal(0, server.PublishedCount);
     }
+
+    [Fact]
+    public async Task Username_Longer_Than_The_Column_Is_Truncated()
+    {
+        await using var server = await AuditTestServer.StartAsync();
+        server.User = new BaseCleanArchitecture.Application.Common.Models.CurrentUser { Id = Guid.NewGuid(), Username = new string('u', 300) };
+
+        await server.Client.GetAsync("/anything");
+        var log = await server.WaitForLogAsync();
+
+        Assert.Equal(256, log.Username!.Length);
+    }
+
+    [Fact]
+    public async Task Null_Characters_Are_Removed_From_Plaintext_Columns()
+    {
+        await using var server = await AuditTestServer.StartAsync();
+        server.User = new BaseCleanArchitecture.Application.Common.Models.CurrentUser { Id = Guid.NewGuid(), Username = "al ice" };
+
+        await server.Client.GetAsync("/nul");
+        var log = await server.WaitForLogAsync();
+
+        Assert.Equal("InvalidOperationException: badmessage", log.ErrorMessage);
+        Assert.Equal("alice", log.Username);
+        Assert.DoesNotContain(' ', log.Path);
+    }
+
+    [Fact]
+    public async Task Huge_MaxBodyBytes_Setting_Does_Not_Break_Request_Capture()
+    {
+        await using var server = await AuditTestServer.StartAsync(maxBodyBytes: int.MaxValue);
+
+        await server.Client.PostAsync("/echo", Json("{\"a\":1}"));
+        var log = await server.WaitForLogAsync();
+
+        Assert.Equal("{\"a\":1}", server.Encryptor.Decrypt(log.RequestBody!));
+    }
 }

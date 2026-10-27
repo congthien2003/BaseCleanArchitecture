@@ -19,6 +19,9 @@ public sealed class FakeAuditStore
     /// <summary>Return true to make this SaveChangesAsync call throw. Argument is the 1-based call number.</summary>
     public Func<int, bool> FailOnSave { get; set; } = _ => false;
 
+    /// <summary>Any save whose staged rows include one of these ids fails (a record the database rejects).</summary>
+    public HashSet<Guid> PoisonedIds { get; } = new();
+
     public IAuditLogRepository Repository => new FakeRepository(this);
     public IUnitOfWork UnitOfWork => new FakeUnitOfWork(this);
 
@@ -50,7 +53,7 @@ public sealed class FakeAuditStore
                 var staged = store._pending.ToList();
                 store._pending.Clear();
 
-                if (store.FailOnSave(store.SaveCalls))
+                if (store.FailOnSave(store.SaveCalls) || staged.Any(l => store.PoisonedIds.Contains(l.Id)))
                 {
                     throw new InvalidOperationException("simulated save failure");
                 }

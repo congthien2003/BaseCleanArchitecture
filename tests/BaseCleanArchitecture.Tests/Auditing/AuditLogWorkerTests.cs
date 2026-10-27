@@ -82,4 +82,22 @@ public class AuditLogWorkerTests
 
         Assert.Equal(50, store.Saved.Count);
     }
+
+    [Fact]
+    public async Task Worker_Saves_Good_Records_When_One_Record_In_The_Batch_Is_Poisonous()
+    {
+        var (worker, channel, store) = Create(new AuditOptions { BatchSize = 3, WriteRetries = 0, RetryDelayMs = 0 });
+        var first = new AuditLog();
+        var poison = new AuditLog();
+        var last = new AuditLog();
+        store.PoisonedIds.Add(poison.Id);
+        channel.TryPublish(first);
+        channel.TryPublish(poison);
+        channel.TryPublish(last);
+
+        await worker.StartAsync(CancellationToken.None);
+        await worker.StopAsync(CancellationToken.None);
+
+        Assert.Equal(new[] { first.Id, last.Id }, store.Saved.Select(l => l.Id));
+    }
 }

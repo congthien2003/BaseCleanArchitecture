@@ -48,5 +48,10 @@ public static class AuditErrorMessage
         return null;
     }
 
-    private static string Cap(string value) => value.Length <= MaxLength ? value : value[..MaxLength];
+    // PostgreSQL text columns reject U+0000, and one rejected row must not cost a whole batch.
+    private static string Cap(string value)
+    {
+        value = value.Replace("\0", string.Empty);
+        return value.Length <= MaxLength ? value : value[..MaxLength];
+    }
 }

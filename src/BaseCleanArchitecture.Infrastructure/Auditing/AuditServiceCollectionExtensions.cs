@@ -1,6 +1,7 @@
 using BaseCleanArchitecture.Application.Abstractions.Auditing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace BaseCleanArchitecture.Infrastructure.Auditing
 {
@@ -21,7 +22,8 @@ namespace BaseCleanArchitecture.Infrastructure.Auditing
 
             services.AddSingleton<IAuditEncryptor, AesGcmAuditEncryptor>();
 
-            services.AddScoped<IAuditContext, AuditContext>();
+            services.AddScoped<IAuditContext>(sp =>
+                new AuditContext(sp.GetRequiredService<IOptions<AuditOptions>>().Value.MaxChangesPerRequest));
 
             services.AddSingleton<AuditLogChannel>();
             services.AddSingleton<IAuditLogPublisher>(sp => sp.GetRequiredService<AuditLogChannel>());

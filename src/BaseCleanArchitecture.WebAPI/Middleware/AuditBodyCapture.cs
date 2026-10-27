@@ -26,6 +26,22 @@ public static class AuditBodyCapture
         return Encoding.UTF8.GetString(captured[..Math.Min(captured.Length, maxBytes)]);
     }
 
+    /// <summary>
+    /// HTTP/1.x: a body exists only with Content-Length &gt; 0 or Transfer-Encoding. When neither header says,
+    /// methods that normally carry a body (POST, PUT, PATCH...) are still read; GET, HEAD, DELETE, OPTIONS and TRACE are not.
+    /// </summary>
+    public static bool RequestHasBody(HttpRequest request)
+    {
+        if (request.ContentLength is > 0 || request.Headers.ContainsKey("Transfer-Encoding"))
+        {
+            return true;
+        }
+
+        return request.ContentLength is null
+            && !(HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method) || HttpMethods.IsDelete(request.Method)
+                 || HttpMethods.IsOptions(request.Method) || HttpMethods.IsTrace(request.Method));
+    }
+
     /// <summary>JSON, XML, text/* and form-urlencoded are text. A missing content type is assumed to be text.</summary>
     public static bool IsTextContentType(string? contentType)
     {

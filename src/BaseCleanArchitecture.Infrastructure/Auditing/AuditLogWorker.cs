@@ -59,12 +59,36 @@ namespace BaseCleanArchitecture.Infrastructure.Auditing
 
                 if (batch.Count > 0)
                 {
-                    await PersistWithRetryAsync(batch);
+                    await PersistAsync(batch);
                 }
             }
         }
 
-        private async Task PersistWithRetryAsync(List<AuditLog> batch)
+        // A batch the database rejects is retried, then split so one poison record only costs itself.
+        private async Task PersistAsync(List<AuditLog> batch)
+        {
+            if (await TrySaveWithRetryAsync(batch))
+            {
+                return;
+            }
+
+            if (batch.Count == 1)
+            {
+                _logger.LogError("Dropping audit log {Id} ({Method} {Path}) after failed attempts", batch[0].Id, batch[0].HttpMethod, batch[0].Path);
+                return;
+            }
+
+            _logger.LogWarning("Saving {Count} audit logs failed, falling back to saving them one by one", batch.Count);
+            foreach (var log in batch)
+            {
+                if (!await TrySaveWithRetryAsync([log]))
+                {
+                    _logger.LogError("Dropping audit log {Id} ({Method} {Path}) after failed attempts", log.Id, log.HttpMethod, log.Path);
+                }
+            }
+        }
+
+        private async Task<bool> TrySaveWithRetryAsync(List<AuditLog> batch)
         {
             var attempts = 1 + Math.Max(0, _options.WriteRetries);
 
@@ -82,23 +106,20 @@ namespace BaseCleanArchitecture.Infrastructure.Auditing
                     }
 
                     await unitOfWork.SaveChangesAsync();
-                    return;
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    if (attempt == attempts)
-                    {
-                        _logger.LogError(ex, "Dropping {Count} audit logs after {Attempts} failed attempts", batch.Count, attempts);
-                        return;
-                    }
+                    _logger.LogWarning(ex, "Saving {Count} audit logs failed (attempt {Attempt}/{Attempts})", batch.Count, attempt, attempts);
 
-                    _logger.LogWarning(ex, "Saving {Count} audit logs failed (attempt {Attempt}/{Attempts}), retrying", batch.Count, attempt, attempts);
-                    if (_options.RetryDelayMs > 0)
+                    if (attempt < attempts && _options.RetryDelayMs > 0)
                     {
                         await Task.Delay(_options.RetryDelayMs * attempt);
                     }
                 }
             }
+
+            return false;
         }
     }
 }

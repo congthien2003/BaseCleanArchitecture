@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IRepositoryBase<Role, Guid>, RepositoryBase<Role, Guid>>();
         services.AddScoped<IRepositoryBase<UserRole, Guid>, RepositoryBase<UserRole, Guid>>();
         services.AddScoped<IWebhookLogsRepository, WebhookLogsRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         return services;
     }

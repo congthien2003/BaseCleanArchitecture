@@ -1,5 +1,6 @@
 using BaseCleanArchitecture.Application.Abstractions.Authentication;
 using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
+using BaseCleanArchitecture.Infrastructure.Auditing;
 using BaseCleanArchitecture.Infrastructure.Auth;
 using BaseCleanArchitecture.Infrastructure.Caching;
 using BaseCleanArchitecture.Infrastructure.Email;
@@ -32,6 +33,9 @@ namespace BaseCleanArchitecture.Infrastructure
 
             // Logging
             loggingBuilder.AddOpenTelemetryLogging();
+
+            // Audit log (channel + background worker + encryption)
+            services.AddAuditServices(configuration);
 
             // Domain Event Dispatcher
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();

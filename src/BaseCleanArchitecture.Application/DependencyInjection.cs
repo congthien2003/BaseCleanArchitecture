@@ -1,8 +1,6 @@
 using BaseCleanArchitecture.Application.Abstractions.Authentication;
 using BaseCleanArchitecture.Application.Services;
 using BaseCleanArchitecture.Domain.Services;
-using BaseCleanArchitecture.Domain.Services.Implementations;
-using BaseCleanArchitecture.Domain.Services.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -4,6 +4,7 @@ using BaseCleanArchitecture.Infrastructure;
 using BaseCleanArchitecture.Infrastructure.Auth;
 using BaseCleanArchitecture.Persistence;
 using BaseCleanArchitecture.WebAPI.Middleware;
+using BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 using MediatR;
 using Scalar.AspNetCore;
 using Serilog;
@@ -63,6 +64,9 @@ try
                 .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
         });
     }
+
+    // Before the exception handler so the audit log sees the final response (and the handled exception).
+    app.UseMiddleware<AuditLoggingMiddleware>();
 
     app.UseExceptionHandler();
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BaseCleanArchitecture.WebAPI.Middleware;
@@ -19,6 +20,8 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         };
 
         logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
+
+        httpContext.Items[AuditHttpContextKeys.Exception] = exception;
 
         var problemDetails = new ProblemDetails
         {

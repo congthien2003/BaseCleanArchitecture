@@ -64,6 +64,9 @@ try
         });
     }
 
+    // Before the exception handler so the audit log sees the final response (and the handled exception).
+    app.UseMiddleware<AuditLoggingMiddleware>();
+
     app.UseExceptionHandler();
 
     app.UseHttpsRedirection();

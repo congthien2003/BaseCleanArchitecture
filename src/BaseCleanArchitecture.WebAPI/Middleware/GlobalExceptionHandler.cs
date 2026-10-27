@@ -20,6 +20,8 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 
         logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
 
+        httpContext.Items[AuditHttpContextKeys.Exception] = exception;
+
         var problemDetails = new ProblemDetails
         {
             Status = statusCode,

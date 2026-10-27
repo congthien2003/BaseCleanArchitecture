@@ -44,6 +44,11 @@ Domain events (`DomainEventBase : INotification`) are dispatched **after** `Save
 4. Rebus serializes and sends to a queue
 5. External consumers receive integration events from `BaseCleanArchitecture.Contract/ExternalEvents`
 
+## Working rules
+
+- **Do not commit code.**
+- **Always create a plan and wait for user approval before editing code.**
+
 ### CQRS Pattern
 
 Commands are MediatR `IRequest<TResponse>`. Handlers live in `Application/Features/<Feature>/Commands/`. The `BaseController` injects `IMediator` and dispatches requests. A `LoggingBehavior<TRequest, TResponse>` pipeline behavior logs all requests.
@@ -54,6 +59,14 @@ Commands are MediatR `IRequest<TResponse>`. Handlers live in `Application/Featur
 - `ApplicationDbContext` uses SQL Server (`UseSqlServer`). Connection string comes from `appsettings.json` → `DefaultConnection`
 - Audit fields (`CreatedAt`, `CreatedBy`, etc.) are auto-populated in `SaveChangesAsync` using `ICurrentUserService`
 - Entity configurations live in `Persistence/Configurations/` and are auto-applied via `ApplyConfigurationsFromAssembly`
+
+### Observability (OpenTelemetry)
+
+- `AddObservability` in `Infrastructure/OpenTelemetry/` wires traces, metrics and logs; configured by the `OpenTelemetry` appsettings section (`OpenTelemetryOptions`)
+- Export via OTLP to `OpenTelemetry:OtlpEndpoint`; `docker compose up aspire-dashboard` starts a local viewer at http://localhost:18888 (OTLP gRPC on 4317)
+- Custom `ActivitySource`/`Meter` names must start with `BaseCleanArchitecture.` to be collected (e.g. `TracingBehavior` creates a span per MediatR request)
+- `AuditLog.TraceId` stores the request's trace id so an audit record can be looked up in the trace backend
+- Serilog uses `writeToProviders: true` so logs also reach the OpenTelemetry logger provider
 
 ### Message Bus (Rebus/RabbitMQ)
 

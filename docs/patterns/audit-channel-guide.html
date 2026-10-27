@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit Log Channel Pattern</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --surface: #ffffff; --surface2: #eef1f5; --text: #1b2330; --muted: #5d6b7e;
+    --border: #d9dee6; --accent: #2563eb; --accent-soft: #dbe7ff;
+    --ok: #15803d; --ok-soft: #dcfce7; --warn: #b45309; --warn-soft: #fef3c7; --bad: #b91c1c; --bad-soft: #fee2e2;
+    --enc: #7c3aed; --enc-soft: #ede9fe;
+    --code-bg: #0f172a; --code-text: #e2e8f0;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 14px rgba(15,23,42,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1f2630; --text: #e6edf3; --muted: #93a1b5;
+      --border: #2b3441; --accent: #5b9dff; --accent-soft: #1b2f55;
+      --ok: #4ade80; --ok-soft: #12301f; --warn: #fbbf24; --warn-soft: #3a2c0c; --bad: #f87171; --bad-soft: #3b1618;
+      --enc: #a78bfa; --enc-soft: #2a2145;
+      --code-bg: #0a0e14; --code-text: #d6deea;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+  nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  nav .wrap { display: flex; gap: 4px; overflow-x: auto; padding-top: 8px; padding-bottom: 8px; }
+  nav a { white-space: nowrap; text-decoration: none; color: var(--muted); font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+  nav a:hover { background: var(--surface2); color: var(--text); }
+
+  header.hero { padding: 48px 0 24px; }
+  .eyebrow { color: var(--accent); font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  h1 { font-size: clamp(28px, 5vw, 42px); line-height: 1.15; margin: 8px 0 12px; letter-spacing: -.02em; }
+  .lead { color: var(--muted); font-size: 18px; max-width: 720px; margin: 0; }
+  .principle { margin-top: 20px; padding: 14px 18px; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 8px; max-width: 720px; }
+
+  section { padding: 36px 0 8px; }
+  h2 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; }
+  h3 { font-size: 18px; margin: 0 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 20px; max-width: 720px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); }
+  .grid3 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface2); color: var(--muted); }
+  .tag.pub { background: var(--accent-soft); color: var(--accent); }
+  .tag.con { background: var(--ok-soft); color: var(--ok); }
+  .tag.enc { background: var(--enc-soft); color: var(--enc); }
+  p { margin: 0 0 10px; }
+  ul { margin: 6px 0 10px; padding-left: 20px; }
+  li { margin: 3px 0; }
+  :not(pre) > code { background: var(--surface2); padding: 1px 6px; border-radius: 5px; font-size: .88em; }
+
+  pre { background: var(--code-bg); color: var(--code-text); padding: 14px 16px; border-radius: 10px; overflow-x: auto; font-size: 13px; line-height: 1.55; margin: 10px 0 0; }
+  pre .c { color: #7b8aa0; } pre .k { color: #7aa7ff; } pre .s { color: #8fd694; }
+
+  /* flow */
+  .flow-layout { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 900px) {
+    .flow-layout { grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; }
+    .flow-main { grid-column: span 8; }
+    .flow-side { grid-column: span 4; }
+  }
+  /* Mọi chi tiết bước xếp chồng trong cùng một ô lưới nên ô luôn cao bằng bước dài nhất: chuyển bước không làm trang giật. */
+  .stepdetail { display: grid; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .sd { grid-area: 1 / 1; visibility: hidden; min-width: 0; }
+  .sd.on { visibility: visible; }
+  .sd p { margin-bottom: 0; }
+  svg.flow { width: 100%; height: auto; display: block; }
+  .node rect { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; rx: 10; transition: all .25s; }
+  .node text { fill: var(--muted); font-size: 12.5px; text-anchor: middle; transition: fill .25s; font-family: system-ui, sans-serif; }
+  .node text.t { font-weight: 600; font-size: 13.5px; }
+  .node.on rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .node.on text { fill: var(--text); }
+  .node.q rect { stroke: var(--enc); } .node.q.on rect { fill: var(--enc-soft); stroke: var(--enc); }
+  .edge { fill: none; stroke: var(--border); stroke-width: 2; transition: all .25s; }
+  .edge.dash { stroke-dasharray: 6 5; }
+  .edge.on { stroke: var(--accent); stroke-width: 3; }
+  .edge.on.flow-anim { stroke-dasharray: 8 6; animation: dash 0.8s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -14; } }
+  .lane { font-size: 11px; fill: var(--muted); letter-spacing: .08em; font-family: system-ui, sans-serif; }
+  marker path { fill: var(--muted); }
+
+  .stepper { display: flex; flex-direction: column; gap: 6px; }
+  .stepbtn { text-align: left; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 9px 12px; cursor: pointer; font: inherit; font-size: 14.5px; display: flex; gap: 10px; align-items: center; }
+  .stepbtn:hover { border-color: var(--accent); }
+  .stepbtn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .stepbtn b { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--surface2); display: grid; place-items: center; font-size: 12px; }
+  .stepbtn[aria-pressed="true"] b { background: var(--accent); color: #fff; }
+  .controls { display: flex; gap: 8px; margin-top: 10px; }
+  button.btn { font: inherit; font-size: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+  button.btn:hover { border-color: var(--accent); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tab { font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+  .tab[aria-selected="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .panel[hidden] { display: none; }
+  .file { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .why { margin-top: 12px; padding: 12px 14px; background: var(--surface2); border-radius: 10px; font-size: 15px; }
+  .why b { color: var(--accent); }
+
+  /* bytes */
+  .bytes { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); font-size: 13px; text-align: center; margin: 12px 0; }
+  .bytes div { padding: 12px 6px; }
+  .bytes .p { flex: 0 0 56px; background: var(--surface2); }
+  .bytes .n { flex: 0 0 120px; background: var(--accent-soft); }
+  .bytes .t { flex: 0 0 150px; background: var(--ok-soft); }
+  .bytes .c { flex: 1 1 140px; background: var(--enc-soft); }
+  .bytes small { display: block; color: var(--muted); }
+  textarea, input[type=text] { width: 100%; font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+  .out { word-break: break-all; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; background: var(--surface2); padding: 10px 12px; border-radius: 8px; margin-top: 10px; min-height: 42px; }
+
+  /* worker sim */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .chip { padding: 8px 12px; border-radius: 8px; border: 2px solid var(--border); background: var(--surface); font-size: 13px; min-width: 76px; text-align: center; transition: all .3s; }
+  .chip.poison { border-style: dashed; }
+  .chip.try { border-color: var(--warn); background: var(--warn-soft); }
+  .chip.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .chip.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .log { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; background: var(--code-bg); color: var(--code-text); border-radius: 10px; padding: 12px 14px; min-height: 150px; max-height: 240px; overflow: auto; }
+  .log div { margin: 2px 0; } .log .w { color: #fbbf24; } .log .g { color: #4ade80; } .log .r { color: #f87171; }
+
+  /* scenarios */
+  .scn { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .scn { grid-template-columns: 250px 1fr; } }
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; font-size: 14.5px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: ui-monospace, Consolas, monospace; font-size: 13.5px; word-break: break-word; }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
+  .badge.act { background: var(--ok-soft); color: var(--ok); } .badge.exc { background: var(--bad-soft); color: var(--bad); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+
+  .risk { border-left: 4px solid var(--warn); }
+  .risk.hi { border-left-color: var(--bad); }
+  .checks label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .checks label:last-child { border-bottom: 0; }
+  .checks input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
+  footer { padding: 40px 0 60px; color: var(--muted); font-size: 14px; }
+  .layers { display: grid; gap: 8px; }
+  .layer { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: baseline; padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 14px; }
+  .layer b { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { .edge.on.flow-anim { animation: none; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<nav aria-label="Mục lục">
+  <div class="wrap">
+    <a href="#flow">Luồng chạy</a>
+    <a href="#parts">Các thành phần</a>
+    <a href="#crypto">Mã hóa</a>
+    <a href="#worker">Worker &amp; retry</a>
+    <a href="#rules">Quy tắc ghi log</a>
+    <a href="#config">Cấu hình</a>
+    <a href="#risks">Lưu ý</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Pattern · BaseCleanArchitecture</div>
+    <h1>Audit log theo pattern Channel</h1>
+    <p class="lead">Middleware ghi nhận request và đẩy vào <code>Channel&lt;AuditLog&gt;</code>. Một worker nền đọc từ channel rồi ghi xuống PostgreSQL (schema <code>audit</code>). Request, response và thay đổi entity được mã hóa AES-256-GCM trước khi lưu.</p>
+    <div class="principle"><b>Nguyên tắc:</b> audit không bao giờ làm hỏng request. Mọi lỗi phát sinh khi audit chỉ được log lại rồi nuốt.</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- FLOW -->
+<section id="flow">
+  <h2>Luồng chạy của một request</h2>
+  <p class="sub">Bấm từng bước (hoặc dùng nút Tiếp) để xem thành phần nào đang hoạt động. Mỗi request tạo đúng một dòng audit; thay đổi entity gộp vào cột <code>Changes</code> của dòng đó.</p>
+
+  <div class="flow-layout">
+    <div class="card flow-main">
+      <svg class="flow" viewBox="0 0 800 330" role="img" aria-label="Sơ đồ luồng audit: client, middleware, handler, DbContext, channel, worker, PostgreSQL">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker>
+        </defs>
+        <text class="lane" x="20" y="22">REQUEST PIPELINE</text>
+        <text class="lane" x="20" y="222">AUDIT PIPELINE (BẤT ĐỒNG BỘ)</text>
+
+        <!-- edges -->
+        <path class="edge" data-steps="1" d="M130 70 H190" marker-end="url(#arr)"/>
+        <path class="edge" data-steps="3" d="M340 70 H400" marker-end="url(#arr)"/>
+        <path class="edge" data-steps="4" d="M560 70 H620" marker-end="url(#arr)"/>
+        <path class="edge" data-steps="4" d="M700 100 V135" marker-end="url(#arr)"/>
+        <path class="edge dash" data-steps="5" d="M620 157 H295 V100" marker-end="url(#arr)"/>
+        <path class="edge" data-steps="6" d="M235 100 V250" marker-end="url(#arr)"/>
+        <path class="edge" data-steps="7" d="M340 260 H400" marker-end="url(#arr)"/>
+        <path class="edge" data-steps="7" d="M560 260 H620" marker-end="url(#arr)"/>
+
+        <!-- nodes -->
+        <g class="node" data-steps="1"><rect x="20" y="40" width="110" height="60"/><text class="t" x="75" y="67">Client</text><text x="75" y="85">HTTP request</text></g>
+        <g class="node" data-steps="1 2 3 5 6"><rect x="190" y="40" width="150" height="60"/><text class="t" x="265" y="64">AuditLogging</text><text x="265" y="80">Middleware</text></g>
+        <g class="node" data-steps="3"><rect x="400" y="40" width="160" height="60"/><text class="t" x="480" y="64">Controller</text><text x="480" y="80">MediatR → Handler</text></g>
+        <g class="node" data-steps="4"><rect x="620" y="40" width="160" height="60"/><text class="t" x="700" y="64">DbContext</text><text x="700" y="80">SaveChangesAsync</text></g>
+        <g class="node" data-steps="4 5"><rect x="620" y="135" width="160" height="44"/><text class="t" x="700" y="162">IAuditContext</text></g>
+        <g class="node q" data-steps="6 7"><rect x="190" y="230" width="150" height="60"/><text class="t" x="265" y="254">Channel</text><text x="265" y="270">bounded · TryWrite</text></g>
+        <g class="node" data-steps="7"><rect x="400" y="230" width="160" height="60"/><text class="t" x="480" y="254">AuditLogWorker</text><text x="480" y="270">batch + retry</text></g>
+        <g class="node" data-steps="7"><rect x="620" y="230" width="160" height="60"/><text class="t" x="700" y="254">PostgreSQL</text><text x="700" y="270">audit."AuditLogs"</text></g>
+      </svg>
+      <div class="controls">
+        <button class="btn" id="prev" type="button">← Trước</button>
+        <button class="btn primary" id="next" type="button">Tiếp →</button>
+        <button class="btn" id="play" type="button">▶ Tự chạy</button>
+      </div>
+      <div class="stepdetail" id="stepdetail" aria-live="polite"></div>
+    </div>
+
+    <div class="flow-side">
+      <div class="stepper" id="stepper"></div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTS -->
+<section id="parts">
+  <h2>Các thành phần</h2>
+  <p class="sub">Chọn một thành phần để xem code mẫu rút gọn và lý do thiết kế.</p>
+
+  <div class="card">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="panels"></div>
+  </div>
+
+  <h3 style="margin-top:26px">Vị trí theo layer</h3>
+  <div class="layers">
+    <div class="layer"><b>Domain</b><span><code>AuditLog</code>, <code>AuditType</code>, <code>IAuditLogRepository</code></span></div>
+    <div class="layer"><b>Application</b><span><code>IAuditLogPublisher</code>, <code>IAuditEncryptor</code>, <code>IAuditContext</code>, queries <code>GetAuditLogs</code> / <code>GetAuditLogById</code></span></div>
+    <div class="layer"><b>Infrastructure</b><span><code>AuditLogChannel</code>, <code>AuditLogWorker</code>, <code>AesGcmAuditEncryptor</code>, <code>AuditContext</code>, options, <code>AddAuditServices</code></span></div>
+    <div class="layer"><b>Persistence</b><span><code>AuditLogConfiguration</code>, <code>AuditLogRepository</code>, <code>EntityChangeSnapshot</code>, <code>ApplicationDbContext</code></span></div>
+    <div class="layer"><b>WebAPI</b><span><code>Middleware/AuditLogging/*</code>, <code>AuditLogsController</code>, hook trong <code>GlobalExceptionHandler</code></span></div>
+  </div>
+</section>
+
+<!-- CRYPTO -->
+<section id="crypto">
+  <h2>Mã hóa AES-256-GCM</h2>
+  <p class="sub">Ba cột <code>RequestBody</code>, <code>ResponseBody</code>, <code>Changes</code> được mã hóa trước khi lưu. Khóa là base64 của đúng 32 byte, nằm ở <code>AuditEncryption:Key</code>.</p>
+
+  <div class="card">
+    <h3>Định dạng chuỗi lưu trong DB</h3>
+    <div class="bytes" aria-label="Bố cục byte">
+      <div class="p">v1:<small>phiên bản</small></div>
+      <div class="n">nonce<small>12 byte ngẫu nhiên</small></div>
+      <div class="t">tag<small>16 byte xác thực</small></div>
+      <div class="c">ciphertext<small>độ dài = plaintext</small></div>
+    </div>
+    <p style="font-size:14.5px">Phần sau <code>v1:</code> được mã hóa base64. Tiền tố phiên bản chừa chỗ cho việc xoay khóa. Nếu ai sửa dữ liệu trong DB, tag không khớp và <code>Decrypt</code> ném <code>CryptographicException</code>.</p>
+
+    <h3 style="margin-top:18px">Thử ngay trong trình duyệt</h3>
+    <p style="font-size:14.5px;color:var(--muted)">Dùng WebCrypto, cùng bố cục byte với code thật. Khóa được tạo ngẫu nhiên trong trang này và không gửi đi đâu.</p>
+    <textarea id="plain" rows="3" aria-label="Văn bản cần mã hóa">{"username":"an","password":"123456"}</textarea>
+    <div class="controls">
+      <button class="btn primary" id="enc" type="button">Mã hóa</button>
+      <button class="btn" id="dec" type="button">Giải mã lại</button>
+    </div>
+    <div class="out" id="encOut" aria-live="polite">Kết quả sẽ hiện ở đây.</div>
+    <div class="out" id="decOut" style="display:none"></div>
+  </div>
+</section>
+
+<!-- WORKER -->
+<section id="worker">
+  <h2>Worker: batch, retry, tách từng bản ghi</h2>
+  <p class="sub">Một bản ghi "độc" (ví dụ chứa dữ liệu Postgres từ chối) chỉ được làm mất chính nó, không kéo theo cả batch. Thử mô phỏng bên dưới với batch 5 bản ghi, trong đó có một bản ghi lỗi.</p>
+
+  <div class="card">
+    <div class="controls" style="margin:0 0 4px">
+      <label style="font-size:14px;display:flex;gap:8px;align-items:center">Số lần thử thêm (<code>WriteRetries</code>)
+        <input type="text" id="retries" value="2" inputmode="numeric" style="width:56px">
+      </label>
+      <button class="btn primary" id="runSim" type="button">Chạy mô phỏng</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="log" id="simlog" aria-live="polite"><div class="w">Bấm "Chạy mô phỏng".</div></div>
+    <pre><span class="c">// Lưu cả batch trước, thất bại thì tách từng cái</span>
+<span class="k">if</span> (<span class="k">await</span> TrySaveWithRetryAsync(batch)) <span class="k">return</span>;
+<span class="k">if</span> (batch.Count == 1) { <span class="c">/* log lỗi, bỏ */</span> <span class="k">return</span>; }
+<span class="k">foreach</span> (<span class="k">var</span> log <span class="k">in</span> batch)
+    <span class="k">if</span> (!<span class="k">await</span> TrySaveWithRetryAsync([log])) { <span class="c">/* bỏ riêng cái này */</span> }</pre>
+    <div class="why"><b>Khi tắt app:</b> <code>StopAsync</code> gọi <code>Complete()</code> rồi chờ worker drain hết hàng đợi, nên log còn lại vẫn được ghi. Channel đầy hoặc crash đột ngột thì mất log chưa ghi.</div>
+  </div>
+</section>
+
+<!-- RULES -->
+<section id="rules">
+  <h2>Quy tắc điền một dòng audit</h2>
+  <p class="sub">Chọn một tình huống để xem <code>AuditType</code>, <code>StatusCode</code> và <code>ErrorMessage</code> được quyết định thế nào.</p>
+
+  <div class="scn">
+    <div class="stepper" id="scnList"></div>
+    <div class="card" id="scnDetail" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- CONFIG -->
+<section id="config">
+  <h2>Cấu hình</h2>
+  <p class="sub">Section <code>Audit</code> và <code>AuditEncryption</code> trong <code>appsettings.json</code>.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Khóa</th><th>Mặc định</th><th>Ý nghĩa</th></tr></thead>
+      <tbody>
+        <tr><td><code>Audit:ChannelCapacity</code></td><td>10000</td><td>Sức chứa hàng đợi. Đầy thì bỏ log mới và cảnh báo.</td></tr>
+        <tr><td><code>Audit:MaxBodyBytes</code></td><td>1 MiB</td><td>Số byte tối đa giữ cho mỗi body. Quá thì cắt và bật cờ <code>Is*Truncated</code>.</td></tr>
+        <tr><td><code>Audit:MaxChangesPerRequest</code></td><td>1000</td><td>Số entity change tối đa mỗi request. Không có sẵn trong file, đang dùng mặc định.</td></tr>
+        <tr><td><code>Audit:BatchSize</code></td><td>100</td><td>Số log ghi mỗi lần.</td></tr>
+        <tr><td><code>Audit:WriteRetries</code></td><td>3</td><td>Số lần thử thêm sau lần đầu thất bại (tổng 1 + 3).</td></tr>
+        <tr><td><code>Audit:RetryDelayMs</code></td><td>200</td><td>Chờ <code>RetryDelayMs × số lần thử</code> giữa các lần.</td></tr>
+        <tr><td><code>AuditEncryption:Key</code></td><td>rỗng</td><td>Base64 của 32 byte. Bắt buộc: thiếu hoặc sai thì app không khởi động.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre>[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))   <span class="c"># tạo khóa (PowerShell)</span>
+AuditEncryption__Key=&lt;base64-32-byte&gt;                                                           <span class="c"># đặt qua biến môi trường</span></pre>
+
+  <h3 style="margin-top:22px">Lifetime trong DI</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Thành phần</th><th>Lifetime</th><th>Lý do</th></tr></thead>
+      <tbody>
+        <tr><td><code>AuditLogChannel</code>, <code>IAuditLogPublisher</code></td><td>Singleton</td><td>Một hàng đợi duy nhất, cùng một instance cho cả hai interface.</td></tr>
+        <tr><td><code>AuditLogWorker</code></td><td>Hosted service</td><td>Một consumer; tự tạo scope mỗi lần lưu.</td></tr>
+        <tr><td><code>IAuditEncryptor</code></td><td>Singleton</td><td>Giữ khóa, không có state theo request.</td></tr>
+        <tr><td><code>IAuditContext</code></td><td>Scoped</td><td>Mỗi request một danh sách changes riêng.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- RISKS -->
+<section id="risks">
+  <h2>Lưu ý và giới hạn đã biết</h2>
+  <div class="grid3">
+    <div class="card risk hi"><h3>Bảo mật</h3><ul>
+      <li>2 API đọc <b>chưa yêu cầu đăng nhập</b>. Cần <code>[Authorize]</code> trước khi dùng ngoài dev.</li>
+      <li><code>ErrorMessage</code>, <code>Username</code>, <code>Path</code> là plaintext, có thể phản chiếu dữ liệu người dùng nhập.</li>
+      <li>Body đăng nhập/đăng ký lưu nguyên văn trước khi mã hóa, nên mật khẩu nằm trong dữ liệu sau khi giải mã.</li>
+      <li>Khóa dev nằm trong <code>appsettings.Development.json</code>; môi trường thật dùng secret store.</li>
+    </ul></div>
+    <div class="card risk"><h3>Độ tin cậy</h3><ul>
+      <li>Channel đầy hoặc crash đột ngột thì mất log chưa ghi.</li>
+      <li>Retry sau khi mất xác nhận commit có thể dính trùng khóa chính.</li>
+      <li>Changes vẫn được ghi nếu transaction ngoài rollback sau <code>SaveChanges</code>.</li>
+      <li>Client ngắt kết nối có thể bị ghi là <code>Exception</code> 500.</li>
+    </ul></div>
+    <div class="card risk"><h3>Dung lượng và API</h3><ul>
+      <li>Chưa có chính sách xóa log cũ; bảng sẽ lớn dần.</li>
+      <li>Request chunked lớn hơn <code>MaxBodyBytes</code> vẫn phải đọc hết để đếm kích thước.</li>
+      <li><code>page</code> cực lớn có thể tràn int gây 500.</li>
+      <li>Thứ tự list chưa ổn định khi trùng <code>CreatedAt</code>.</li>
+    </ul></div>
+  </div>
+
+  <h3 style="margin-top:26px">Checklist vận hành</h3>
+  <div class="card checks" id="checks">
+    <label><input type="checkbox"> <span>Đã đặt <code>AuditEncryption:Key</code> (32 byte base64) cho môi trường, lấy từ secret store.</span></label>
+    <label><input type="checkbox"> <span>Đã chạy migration <code>AddAuditLogs</code>.</span></label>
+    <label><input type="checkbox"> <span>Đã thêm <code>[Authorize]</code> hoặc policy cho <code>AuditLogsController</code>.</span></label>
+    <label><input type="checkbox"> <span>Đã có kế hoạch xóa hoặc lưu trữ log cũ.</span></label>
+    <label><input type="checkbox"> <span>Đã theo dõi cảnh báo <code>Audit log dropped</code> và <code>Dropping audit log</code>.</span></label>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">Bản trực quan của <code>docs/patterns/audit-channel-guide.md</code>. Code mẫu đã được rút gọn; xem file nguồn trong <code>src/</code> để có bản đầy đủ.</div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- helpers ---------- */
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function $(id) { return document.getElementById(id); }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+  /* ---------- flow stepper ---------- */
+  var steps = [
+    { t: "Request vào, đọc body", d: "Middleware đọc tối đa <code>MaxBodyBytes</code> đầu tiên của body (chỉ với body dạng text) và bật <code>EnableBuffering</code> để controller vẫn đọc lại được. Body nhị phân không bị đọc.",
+      c: "request.EnableBuffering();\nvar buffer = new byte[maxBytes];\n// đọc tối đa maxBytes, rồi:\nrequest.Body.Position = 0;" },
+    { t: "Bọc Response.Body", d: "Thay <code>Response.Body</code> bằng <code>CapturingStream</code>: dữ liệu đi thẳng ra client, chỉ giữ bản sao của <code>MaxBodyBytes</code> đầu và đếm tổng số byte.",
+      c: "var response = new CapturingStream(originalBody, maxBytes);\ncontext.Response.Body = response;" },
+    { t: "Chạy pipeline", d: "Middleware gọi <code>next</code>. Controller, MediatR và handler xử lý như bình thường. Exception lọt ra được giữ lại để rethrow.",
+      c: "try   { await _next(context); }\ncatch (Exception ex) { escaped = ex; throw; }" },
+    { t: "SaveChanges thu thay đổi", d: "<code>ApplicationDbContext</code> chụp thay đổi entity trước khi save. Sau khi save thành công (<code>result &gt; 0</code>) mới đưa vào <code>IAuditContext</code>.",
+      c: "var snap = EntityChangeSnapshot.Capture(ChangeTracker);\nvar result = await base.SaveChangesAsync(ct);\nif (result > 0) _auditContext.AddChanges(snap.Resolve());" },
+    { t: "Dựng AuditLog và mã hóa", d: "Trong <code>finally</code>, middleware lấy exception (đã xử lý hoặc lọt ra), status, user, changes; mã hóa body và changes rồi dựng <code>AuditLog</code>.",
+      c: "var log = new AuditLog {\n  AuditType = exception is not null ? Exception : Activity,\n  RequestBody = encryptor.Encrypt(requestText),\n  Changes = encryptor.Encrypt(Serialize(changes)), ...\n};" },
+    { t: "TryPublish vào Channel", d: "Ghi vào channel bằng <code>TryWrite</code>, không chờ. Đầy thì bỏ log và cảnh báo. Request được trả về cho client ngay.",
+      c: "publisher.TryPublish(log);   // không bao giờ block, không ném lỗi" },
+    { t: "Worker ghi xuống DB", d: "Worker đọc theo batch, mở scope mới, lưu qua repository và unit of work, có retry. Thất bại thì tách từng bản ghi.",
+      c: "while (await reader.WaitToReadAsync(CancellationToken.None))\n{\n    // gom tối đa BatchSize bản ghi\n    await PersistAsync(batch);\n}" }
+  ];
+  var cur = 1, timer = null;
+
+  function renderStep() {
+    var nodes = document.querySelectorAll("svg.flow .node, svg.flow .edge");
+    nodes.forEach(function (n) {
+      var on = n.getAttribute("data-steps").split(" ").indexOf(String(cur)) >= 0;
+      n.classList.toggle("on", on);
+      if (n.classList.contains("edge")) n.classList.toggle("flow-anim", on);
+    });
+    document.querySelectorAll(".stepbtn[data-step]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-step")) === cur));
+    });
+    document.querySelectorAll("#stepdetail .sd").forEach(function (el, i) {
+      var on = i === cur - 1;
+      el.classList.toggle("on", on);
+      el.setAttribute("aria-hidden", String(!on));
+    });
+  }
+  steps.forEach(function (s, i) {
+    var el = document.createElement("div");
+    el.className = "sd";
+    el.innerHTML = "<h3>Bước " + (i + 1) + ": " + esc(s.t) + "</h3><p>" + s.d + "</p><pre>" + esc(s.c) + "</pre>";
+    $("stepdetail").appendChild(el);
+  });
+  var stepper = $("stepper");
+  steps.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "stepbtn"; b.setAttribute("data-step", i + 1);
+    b.innerHTML = "<b>" + (i + 1) + "</b><span>" + esc(s.t) + "</span>";
+    b.addEventListener("click", function () { stop(); cur = i + 1; renderStep(); });
+    stepper.appendChild(b);
+  });
+  function go(d) { cur = ((cur - 1 + d + steps.length) % steps.length) + 1; renderStep(); }
+  function stop() { if (timer) { clearInterval(timer); timer = null; $("play").textContent = "▶ Tự chạy"; } }
+  $("prev").addEventListener("click", function () { stop(); go(-1); });
+  $("next").addEventListener("click", function () { stop(); go(1); });
+  $("play").addEventListener("click", function () {
+    if (timer) { stop(); return; }
+    $("play").textContent = "⏸ Dừng";
+    timer = setInterval(function () { go(1); }, 1800);
+  });
+  renderStep();
+
+  /* ---------- component tabs ---------- */
+  var parts = [
+    { id: "entity", name: "Entity", file: "Domain/Entities/AuditLog.cs",
+      code: "public class AuditLog : EntityBase<Guid>\n{\n    public AuditType AuditType { get; set; }   // Activity | Exception\n    public int StatusCode { get; set; }\n    public string? ErrorMessage { get; set; }  // plaintext\n    public string HttpMethod { get; set; }\n    public string Path { get; set; }           // không có query string\n    public Guid? UserId { get; set; }          // null nếu chưa đăng nhập\n    public string? Username { get; set; }\n    public long DurationMs { get; set; }\n\n    public string? RequestBody { get; set; }   // MÃ HÓA\n    public string? ResponseBody { get; set; }  // MÃ HÓA\n    public string? Changes { get; set; }       // MÃ HÓA\n\n    public bool IsRequestTruncated { get; set; }\n    public bool IsResponseTruncated { get; set; }\n    public DateTimeOffset CreatedAt { get; set; }\n\n    public AuditLog() : base(Guid.CreateVersion7()) { }\n}",
+      why: "Guid v7 sắp xếp theo thời gian nên chèn nhanh. Chỉ ba cột body/changes được mã hóa; ErrorMessage, Username, Path để plaintext để lọc và xem nhanh. Header không được lưu." },
+    { id: "channel", name: "Channel (publisher)", file: "Infrastructure/Auditing/AuditLogChannel.cs",
+      code: "public sealed class AuditLogChannel : IAuditLogPublisher\n{\n    _channel = Channel.CreateBounded<AuditLog>(\n        new BoundedChannelOptions(capacity)\n        {\n            FullMode = BoundedChannelFullMode.Wait, // TryWrite trả false khi đầy\n            SingleReader = true,\n        });\n\n    public ChannelReader<AuditLog> Reader => _channel.Reader;\n\n    public bool TryPublish(AuditLog log)\n    {\n        if (_channel.Writer.TryWrite(log)) return true;\n        _logger.LogWarning(\"Audit log dropped\");\n        return false;   // không chờ, không ném lỗi\n    }\n\n    public void Complete() => _channel.Writer.TryComplete();\n}",
+      why: "Bounded để RAM không phình khi DB chậm: đầy thì bỏ log mới, chấp nhận mất audit hơn là làm chậm API. TryWrite thay vì WriteAsync nên middleware không bao giờ bị block. Cùng một singleton đóng hai vai: IAuditLogPublisher cho middleware, AuditLogChannel cho worker lấy Reader." },
+    { id: "worker", name: "Worker (consumer)", file: "Infrastructure/Auditing/AuditLogWorker.cs",
+      code: "public sealed class AuditLogWorker : IHostedService\n{\n    public Task StartAsync(CancellationToken ct)\n    {\n        _loop = Task.Run(RunAsync, CancellationToken.None);\n        return Task.CompletedTask;\n    }\n\n    public async Task StopAsync(CancellationToken ct)\n    {\n        _channel.Complete();            // không nhận thêm\n        await _loop.WaitAsync(ct);      // drain phần còn lại\n    }\n\n    private async Task RunAsync()\n    {\n        while (await reader.WaitToReadAsync(CancellationToken.None))\n        {\n            var batch = new List<AuditLog>(batchSize);\n            while (batch.Count < batchSize && reader.TryRead(out var log))\n                batch.Add(log);\n            if (batch.Count > 0) await PersistAsync(batch);\n        }\n    }\n}",
+      why: "Không dùng BackgroundService: trên .NET 10, StopAsync đến ngay sau StartAsync sẽ hủy ExecuteAsync trước khi chạy và làm mất log đang chờ. Worker là singleton còn DbContext là scoped, nên mỗi lần lưu tạo scope mới qua IServiceScopeFactory." },
+    { id: "middleware", name: "Middleware", file: "WebAPI/Middleware/AuditLogging/AuditLoggingMiddleware.cs",
+      code: "public async Task InvokeAsync(HttpContext context, IAuditLogPublisher publisher,\n    IAuditEncryptor encryptor, IAuditContext auditContext,\n    ICurrentUserService currentUser, IOptions<AuditOptions> options)\n{\n    var stopwatch = Stopwatch.StartNew();\n    var request = await CaptureRequestAsync(context.Request, maxBytes);\n\n    var originalBody = context.Response.Body;\n    var response = new CapturingStream(originalBody, maxBytes);\n    context.Response.Body = response;\n\n    Exception? escaped = null;\n    try   { await _next(context); }\n    catch (Exception ex) { escaped = ex; throw; }\n    finally\n    {\n        context.Response.Body = originalBody;\n        try { publisher.TryPublish(BuildLog(...)); }\n        catch (Exception ex) { _logger.LogError(ex, \"Failed to build audit log\"); }\n    }\n}\n\n// Program.cs: đặt TRƯỚC UseExceptionHandler\napp.UseMiddleware<AuditLoggingMiddleware>();\napp.UseExceptionHandler();",
+      why: "Đặt trước UseExceptionHandler để thấy response cuối cùng sau khi exception được đổi thành 500. User được đọc sau next vì lúc đó authentication đã chạy. Lỗi khi audit bị nuốt, không bao giờ làm hỏng request." },
+    { id: "handler", name: "Exception handler", file: "WebAPI/Middleware/GlobalExceptionHandler.cs",
+      code: "// GlobalExceptionHandler.TryHandleAsync\nhttpContext.Items[AuditHttpContextKeys.Exception] = exception;\n\n// AuditLoggingMiddleware.BuildLog\nvar handled = context.Items.TryGetValue(\n    AuditHttpContextKeys.Exception, out var item) ? item as Exception : null;\nvar exception = handled ?? escaped;",
+      why: "Khi GlobalExceptionHandler đã bắt exception và ghi response, exception không còn lọt lên middleware. Handler cất nó vào HttpContext.Items để dòng audit vẫn mang đúng loại và message của exception gốc." },
+    { id: "crypto", name: "Encryptor", file: "Infrastructure/Auditing/AesGcmAuditEncryptor.cs",
+      code: "public string Encrypt(string plaintext)\n{\n    var plain   = Encoding.UTF8.GetBytes(plaintext);\n    var payload = new byte[12 + 16 + plain.Length];\n    var nonce  = payload.AsSpan(0, 12);\n    var tag    = payload.AsSpan(12, 16);\n    var cipher = payload.AsSpan(28);\n\n    RandomNumberGenerator.Fill(nonce);        // nonce mới mỗi lần\n    using var aes = new AesGcm(_key, 16);\n    aes.Encrypt(nonce, plain, cipher, tag);\n\n    return \"v1:\" + Convert.ToBase64String(payload);\n}",
+      why: "GCM vừa mã hóa vừa xác thực. Nonce ngẫu nhiên mỗi lần nên cùng một nội dung cho ra chuỗi khác nhau. ValidateOnStart bảo đảm app không chạy khi thiếu hoặc sai khóa." },
+    { id: "changes", name: "Entity changes", file: "Persistence/Auditing/EntityChangeSnapshot.cs",
+      code: "foreach (var entry in changeTracker.Entries())\n{\n    if (entry.Entity is AuditLog) continue;   // không audit chính bảng audit\n\n    var (action, props) = entry.State switch\n    {\n        EntityState.Added    => (\"Added\",    /* New = giá trị hiện tại */),\n        EntityState.Deleted  => (\"Deleted\",  /* Old = giá trị gốc */),\n        EntityState.Modified => (\"Modified\", /* chỉ thuộc tính thực sự đổi */),\n        _ => (null, null),\n    };\n}\n\n// Kết quả sau khi serialize + mã hóa vào cột Changes:\n// [{ \"Entity\":\"Category\", \"Id\":\"0198…\", \"Action\":\"Modified\",\n//    \"Properties\": { \"Name\": { \"Old\":\"Cũ\", \"New\":\"Mới\" } } }]",
+      why: "Chụp trước khi save vì sau đó trạng thái và giá trị gốc bị reset. Resolve sau khi save để có khóa chính do DB sinh ra. Quá MaxChangesPerRequest thì phần dư được đếm vào một mục cuối {Entity:\"*\", Action:\"Truncated\"}." },
+    { id: "db", name: "Lưu trữ", file: "Persistence/Configurations/AuditLogConfiguration.cs",
+      code: "builder.ToTable(\"AuditLogs\", \"audit\");\nbuilder.Property(a => a.AuditType).HasConversion<string>().HasMaxLength(20);\nbuilder.Property(a => a.RequestBody).HasColumnType(\"text\");\nbuilder.Property(a => a.ResponseBody).HasColumnType(\"text\");\nbuilder.Property(a => a.Changes).HasColumnType(\"text\");\n\nbuilder.HasIndex(a => a.CreatedAt);\nbuilder.HasIndex(a => new { a.AuditType, a.StatusCode, a.CreatedAt });",
+      why: "Bảng nằm ở schema audit; migration AddAuditLogs chỉ đụng schema này. AuditType lưu dạng chuỗi cho dễ đọc khi query trực tiếp. Index ghép phục vụ filter theo AuditType/status kèm sắp xếp theo thời gian." },
+    { id: "api", name: "API đọc", file: "WebAPI/Controllers/Features/AuditLogsController.cs",
+      code: "[Route(\"api/audit-logs\")]\npublic class AuditLogsController : BaseController\n{\n    [HttpGet]\n    GetListAsync(int page = 1, int pageSize = 20,\n                 int? status = null, AuditType? auditType = null);\n\n    [HttpGet(\"{id:guid}\")]\n    GetByIdAsync(Guid id);\n}\n\n// GET /api/audit-logs?page=1&pageSize=20\n// GET /api/audit-logs?status=400\n// GET /api/audit-logs?auditType=Exception&status=500\n// GET /api/audit-logs/0198a3c0-…",
+      why: "status là mã HTTP chính xác (400, 500…), không phải nhóm 4xx/5xx. page nhỏ hơn 1 về 1, pageSize không hợp lệ về 20, tối đa 100. Sắp xếp CreatedAt giảm dần, id không tồn tại trả 404. Chi tiết hiện trả chuỗi đã mã hóa; API giải mã sẽ làm riêng sau." }
+  ];
+  var tabs = $("tabs"), panels = $("panels");
+  parts.forEach(function (p, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "tab"; b.id = "tab-" + p.id; b.setAttribute("role", "tab");
+    b.setAttribute("aria-controls", "panel-" + p.id); b.textContent = p.name;
+    b.addEventListener("click", function () { selectTab(i); });
+    tabs.appendChild(b);
+    var d = document.createElement("div");
+    d.className = "panel"; d.id = "panel-" + p.id; d.setAttribute("role", "tabpanel"); d.setAttribute("aria-labelledby", b.id);
+    d.innerHTML = "<div class='file'>" + esc(p.file) + "</div><pre>" + esc(p.code) + "</pre><div class='why'><b>Vì sao:</b> " + esc(p.why) + "</div>";
+    panels.appendChild(d);
+  });
+  function selectTab(i) {
+    parts.forEach(function (p, j) {
+      $("tab-" + p.id).setAttribute("aria-selected", String(i === j));
+      $("panel-" + p.id).hidden = i !== j;
+    });
+    store("audit-guide-tab", String(i));
+  }
+  var savedTab = parseInt(store("audit-guide-tab"), 10);
+  selectTab(isNaN(savedTab) || savedTab < 0 || savedTab >= parts.length ? 0 : savedTab);
+
+  /* ---------- crypto demo (same byte layout as the C# code) ---------- */
+  var key = null;
+  function b64(buf) { var s = ""; new Uint8Array(buf).forEach(function (x) { s += String.fromCharCode(x); }); return btoa(s); }
+  function unb64(s) { var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+  async function getKey() {
+    if (!key) key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    return key;
+  }
+  async function encrypt(text) {
+    var k = await getKey();
+    var nonce = crypto.getRandomValues(new Uint8Array(12));
+    var res = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce, tagLength: 128 }, k, new TextEncoder().encode(text)));
+    var cipher = res.slice(0, res.length - 16), tag = res.slice(res.length - 16); // WebCrypto: cipher || tag
+    var out = new Uint8Array(12 + 16 + cipher.length);
+    out.set(nonce, 0); out.set(tag, 12); out.set(cipher, 28);                     // đổi sang nonce | tag | cipher
+    return "v1:" + b64(out);
+  }
+  async function decrypt(s) {
+    var k = await getKey();
+    var p = unb64(s.slice(3));
+    var nonce = p.slice(0, 12), tag = p.slice(12, 28), cipher = p.slice(28);
+    var joined = new Uint8Array(cipher.length + 16); joined.set(cipher, 0); joined.set(tag, cipher.length);
+    return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce, tagLength: 128 }, k, joined));
+  }
+  var lastCipher = "";
+  $("enc").addEventListener("click", async function () {
+    $("decOut").style.display = "none";
+    try { lastCipher = await encrypt($("plain").value); $("encOut").textContent = lastCipher; }
+    catch (e) { $("encOut").textContent = "Trình duyệt này không hỗ trợ WebCrypto trên trang hiện tại."; }
+  });
+  $("dec").addEventListener("click", async function () {
+    var out = $("decOut"); out.style.display = "block";
+    if (!lastCipher) { out.textContent = "Hãy mã hóa trước."; return; }
+    try { out.textContent = "Giải mã: " + await decrypt(lastCipher); }
+    catch (e) { out.textContent = "Giải mã thất bại."; }
+  });
+
+  /* ---------- worker simulation ---------- */
+  var chipsEl = $("chips"), logEl = $("simlog"), running = false;
+  var recs = ["#1", "#2", "#3 (lỗi)", "#4", "#5"];
+  function drawChips() {
+    chipsEl.innerHTML = "";
+    recs.forEach(function (r, i) {
+      var c = document.createElement("div");
+      c.className = "chip" + (i === 2 ? " poison" : ""); c.id = "chip" + i; c.textContent = r;
+      chipsEl.appendChild(c);
+    });
+  }
+  function log(msg, cls) { var d = document.createElement("div"); if (cls) d.className = cls; d.textContent = msg; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function mark(ids, cls) { ids.forEach(function (i) { var c = $("chip" + i); c.className = "chip" + (i === 2 ? " poison" : "") + (cls ? " " + cls : ""); }); }
+  async function trySave(ids, attempts) {
+    for (var a = 1; a <= attempts; a++) {
+      mark(ids, "try");
+      await sleep(550);
+      var fails = ids.indexOf(2) >= 0;
+      if (!fails) { mark(ids, "ok"); log("Lưu " + ids.length + " bản ghi: thành công", "g"); return true; }
+      log("Lưu " + ids.length + " bản ghi: thất bại (lần " + a + "/" + attempts + ")", "w");
+      mark(ids, "");
+      await sleep(250);
+    }
+    return false;
+  }
+  $("runSim").addEventListener("click", async function () {
+    if (running) return; running = true;
+    var retries = parseInt($("retries").value, 10); if (isNaN(retries) || retries < 0) retries = 0; if (retries > 5) retries = 5;
+    var attempts = 1 + retries;
+    drawChips(); logEl.innerHTML = "";
+    log("Batch 5 bản ghi, tối đa " + attempts + " lần thử.");
+    var all = [0, 1, 2, 3, 4];
+    if (!(await trySave(all, attempts))) {
+      log("Cả batch thất bại, tách từng bản ghi.", "w");
+      for (var i = 0; i < all.length; i++) {
+        if (!(await trySave([i], attempts))) { mark([i], "bad"); log("Bỏ bản ghi " + recs[i] + " sau " + attempts + " lần thử", "r"); }
+      }
+    }
+    log("Xong: 4 bản ghi được lưu, chỉ bản ghi lỗi bị mất.", "g");
+    running = false;
+  });
+  drawChips();
+
+  /* ---------- scenarios ---------- */
+  var scenarios = [
+    { n: "200 thành công", type: "Activity", status: "200", err: "null", why: "Không có exception và status dưới 400, nên ErrorMessage để null.", note: "Request/response vẫn được lưu (mã hóa)." },
+    { n: "400 từ Result<T>", type: "Activity", status: "400", err: "\"Invalid username or password.\"", why: "Project trả 4xx qua Result<T> mà không ném exception. Vì không có exception nên AuditType vẫn là Activity; message lấy từ JSON response theo thứ tự message, detail, title.", note: "Lọc lỗi nghiệp vụ bằng status=400." },
+    { n: "Exception đã được xử lý", type: "Exception", status: "500", err: "\"InvalidOperationException: …\"", why: "GlobalExceptionHandler bắt exception, ghi response, và cất exception vào HttpContext.Items. Middleware đọc lại từ đó.", note: "ErrorMessage = TênKiểu: Message, tối đa 4000 ký tự." },
+    { n: "Exception lọt khỏi pipeline", type: "Exception", status: "500", err: "\"NullReferenceException: …\"", why: "Không ai xử lý nên exception đi ra tới catch của middleware. Status được ép về 500 vì response chưa kịp được ghi.", note: "Middleware vẫn rethrow sau khi ghi nhận." },
+    { n: "Chưa đăng nhập", type: "Activity", status: "401", err: "tùy response", why: "UserId và Username là null khi chưa có user. Nếu response là JSON có message/detail/title thì lấy làm ErrorMessage, ngược lại null.", note: "Đọc user sau next, khi authentication đã chạy." },
+    { n: "Upload file nhị phân", type: "Activity", status: "200", err: "null", why: "Body không phải text nên không bị đọc. RequestBody lưu chuỗi thay thế [binary content, N bytes] (N là Content-Length khai báo) rồi mới mã hóa.", note: "Chunked binary không có Content-Length thì N = 0." }
+  ];
+  var scnList = $("scnList"), scnDetail = $("scnDetail");
+  scenarios.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "stepbtn"; b.setAttribute("data-scn", i);
+    b.innerHTML = "<span>" + esc(s.n) + "</span>";
+    b.addEventListener("click", function () { showScn(i); });
+    scnList.appendChild(b);
+  });
+  function showScn(i) {
+    var s = scenarios[i];
+    scnList.querySelectorAll(".stepbtn").forEach(function (b) { b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-scn")) === i)); });
+    scnDetail.innerHTML =
+      "<h3>" + esc(s.n) + "</h3><dl class='kv'>" +
+      "<dt>AuditType</dt><dd><span class='badge " + (s.type === "Exception" ? "exc" : "act") + "'>" + s.type + "</span></dd>" +
+      "<dt>StatusCode</dt><dd>" + esc(s.status) + "</dd>" +
+      "<dt>ErrorMessage</dt><dd>" + esc(s.err) + "</dd></dl>" +
+      "<p style='margin-top:14px'>" + esc(s.why) + "</p><p style='color:var(--muted);font-size:14.5px'>" + esc(s.note) + "</p>";
+  }
+  showScn(0);
+
+  /* ---------- checklist persistence ---------- */
+  var boxes = document.querySelectorAll("#checks input");
+  var saved = (store("audit-guide-checks") || "").split(",");
+  boxes.forEach(function (bx, i) {
+    bx.checked = saved[i] === "1";
+    bx.addEventListener("change", function () {
+      var v = []; boxes.forEach(function (x) { v.push(x.checked ? "1" : "0"); });
+      store("audit-guide-checks", v.join(","));
+    });
+  });
+})();
+</script>
+</body>
+</html>

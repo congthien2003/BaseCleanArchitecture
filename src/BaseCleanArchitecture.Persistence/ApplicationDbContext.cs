@@ -1,7 +1,9 @@
-﻿using BaseCleanArchitecture.Application.Abstractions.Authentication;
+﻿using BaseCleanArchitecture.Application.Abstractions.Auditing;
+using BaseCleanArchitecture.Application.Abstractions.Authentication;
 using BaseCleanArchitecture.Application.Abstractions.Infrastructures;
 using BaseCleanArchitecture.Domain.Abtractions;
 using BaseCleanArchitecture.Domain.Entities;
+using BaseCleanArchitecture.Persistence.Auditing;
 using Microsoft.EntityFrameworkCore;
 
 namespace BaseCleanArchitecture.Persistence
@@ -12,10 +14,13 @@ namespace BaseCleanArchitecture.Persistence
 
         private readonly IDomainEventDispatcher _domainEventDispatcher;
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDomainEventDispatcher domainEventDispatcher) : base(options)
+        private readonly IAuditContext _auditContext;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDomainEventDispatcher domainEventDispatcher, IAuditContext auditContext) : base(options)
         {
             _currentUserService = currentUserService;
             _domainEventDispatcher = domainEventDispatcher;
+            _auditContext = auditContext;
         }
 
         public DbSet<Category> Category { get; set; }
@@ -65,7 +70,14 @@ namespace BaseCleanArchitecture.Persistence
                 }
             }
 
+            var entityChanges = EntityChangeSnapshot.Capture(ChangeTracker);
+
             var result = await base.SaveChangesAsync(cancellationToken);
+
+            if (result > 0)
+            {
+                _auditContext.AddChanges(entityChanges.Resolve());
+            }
 
             // Dispatch domain events after successful save
             if (result > 0 && domainEvents.Any())

@@ -21,6 +21,8 @@ namespace BaseCleanArchitecture.Infrastructure.Auditing
 
             services.AddSingleton<IAuditEncryptor, AesGcmAuditEncryptor>();
 
+            services.AddScoped<IAuditContext, AuditContext>();
+
             services.AddSingleton<AuditLogChannel>();
             services.AddSingleton<IAuditLogPublisher>(sp => sp.GetRequiredService<AuditLogChannel>());
             services.AddHostedService<AuditLogWorker>();

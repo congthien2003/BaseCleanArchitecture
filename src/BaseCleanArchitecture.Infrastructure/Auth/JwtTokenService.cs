@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using BaseCleanArchitecture.Application.Abstractions.Authentication;
-using BaseCleanArchitecture.Application.Common.Models;
 using BaseCleanArchitecture.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -19,29 +18,38 @@ public sealed class JwtTokenService : IJwtTokenService
         _options = options.Value;
     }
 
-    public AuthTokenDto GenerateToken(User user)
+    public TimeSpan RefreshTokenLifetime => TimeSpan.FromDays(_options.RefreshTokenDays);
+
+    public AccessToken GenerateAccessToken(User user)
     {
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new(JwtRegisteredClaimNames.Email, user.Email)
+            new(AuthClaimTypes.Subject, user.Id.ToString()),
+            new(AuthClaimTypes.Name, user.Username),
+            new(AuthClaimTypes.Email, user.Email),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        if (user.UserRoles is { Count: > 0 })
+        var roles = user.UserRoles.Where(ur => ur.Role is not null).Select(ur => ur.Role).ToList();
+
+        foreach (var roleName in roles.Select(r => r.Name).Distinct())
         {
-            foreach (var userRole in user.UserRoles)
-            {
-                if (!string.IsNullOrEmpty(userRole.Role?.Name))
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
-                }
-            }
+            claims.Add(new Claim(AuthClaimTypes.Role, roleName));
+        }
+
+        var permissions = roles
+            .SelectMany(r => r.RolePermissions)
+            .Where(rp => rp.Permission is not null)
+            .Select(rp => rp.Permission.Name)
+            .Distinct(StringComparer.Ordinal);
+
+        foreach (var permission in permissions)
+        {
+            claims.Add(new Claim(AuthClaimTypes.Permission, permission));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
         var expiresAt = DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes);
 
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -53,47 +61,14 @@ public sealed class JwtTokenService : IJwtTokenService
             SigningCredentials = credentials
         };
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var securityToken = tokenHandler.CreateToken(tokenDescriptor);
-        var accessToken = tokenHandler.WriteToken(securityToken);
+        var tokenHandler = new JwtSecurityTokenHandler { SetDefaultTimesOnTokenCreation = false };
+        var accessToken = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
 
-        var refreshToken = GenerateRefreshToken();
-
-        return new AuthTokenDto(accessToken, refreshToken, expiresAt);
-    }
-
-    public ClaimsPrincipal? ValidateToken(string token)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_options.SecretKey);
-
-        try
-        {
-            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _options.Issuer,
-                ValidateAudience = true,
-                ValidAudience = _options.Audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            }, out _);
-
-            return principal;
-        }
-        catch
-        {
-            return null;
-        }
+        return new AccessToken(accessToken, expiresAt);
     }
 
     public string GenerateRefreshToken()
     {
-        var randomBytes = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomBytes);
-        return Convert.ToBase64String(randomBytes);
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     }
 }

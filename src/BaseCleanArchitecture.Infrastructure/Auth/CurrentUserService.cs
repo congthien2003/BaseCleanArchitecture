@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using BaseCleanArchitecture.Application.Abstractions.Authentication;
 using BaseCleanArchitecture.Application.Common.Models;
+using BaseCleanArchitecture.Infrastructure.Auth;
 using Microsoft.AspNetCore.Http;
 
 namespace BaseCleanArchitecture.Persistence;
@@ -24,9 +24,10 @@ public class CurrentUserService : ICurrentUserService
 
         return new CurrentUser
         {
-            Id = Guid.TryParse(principal.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty,
-            Username = principal.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty,
-            Role = principal.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty
+            Id = Guid.TryParse(principal.FindFirst(AuthClaimTypes.Subject)?.Value, out var id) ? id : Guid.Empty,
+            Username = principal.FindFirst(AuthClaimTypes.Name)?.Value ?? string.Empty,
+            Roles = principal.FindAll(AuthClaimTypes.Role).Select(c => c.Value).ToList(),
+            Permissions = principal.FindAll(AuthClaimTypes.Permission).Select(c => c.Value).ToList()
         };
     }
 }

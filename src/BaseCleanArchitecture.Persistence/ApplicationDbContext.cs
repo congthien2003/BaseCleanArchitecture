@@ -23,6 +23,20 @@ namespace BaseCleanArchitecture.Persistence
             _auditContext = auditContext;
         }
 
+        public DbSet<User> Users { get; set; }
+
+        public DbSet<Role> Roles { get; set; }
+
+        public DbSet<UserRole> UserRoles { get; set; }
+
+        public DbSet<Permission> Permissions { get; set; }
+
+        public DbSet<RolePermission> RolePermissions { get; set; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
+
         public DbSet<Category> Category { get; set; }
 
         public DbSet<WebhookEvent> WebhookLogs { get; set; }

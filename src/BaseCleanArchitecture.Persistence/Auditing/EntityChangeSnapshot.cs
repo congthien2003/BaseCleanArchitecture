@@ -51,7 +51,18 @@ namespace BaseCleanArchitecture.Persistence.Auditing
             EntityEntry entry,
             Func<PropertyEntry, PropertyChange> toChange,
             Func<PropertyEntry, bool> include) =>
-            entry.Properties.Where(include).ToDictionary(p => p.Metadata.Name, toChange);
+            entry.Properties.Where(include).ToDictionary(p => p.Metadata.Name, p => Redact(p, toChange(p)));
+
+        // Credentials must not end up in the audit trail, even encrypted; the fact that they changed is still recorded.
+        private static readonly HashSet<string> SensitiveProperties =
+            ["PasswordHash", "Salt", "TokenHash", "ReplacedByTokenHash", "CodeHash"];
+
+        private const string Redacted = "[redacted]";
+
+        private static PropertyChange Redact(PropertyEntry property, PropertyChange change) =>
+            SensitiveProperties.Contains(property.Metadata.Name)
+                ? new PropertyChange(change.Old is null ? null : Redacted, change.New is null ? null : Redacted)
+                : change;
 
         private static string? GetKey(EntityEntry entry)
         {

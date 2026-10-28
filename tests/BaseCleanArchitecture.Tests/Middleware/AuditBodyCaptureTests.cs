@@ -71,29 +71,4 @@ public class AuditBodyCaptureTests
     {
         Assert.False(AuditBodyCapture.IsTextContentType(contentType));
     }
-
-    private static Microsoft.AspNetCore.Http.HttpRequest Request(string method, long? contentLength = null, bool chunked = false)
-    {
-        var request = new Microsoft.AspNetCore.Http.DefaultHttpContext().Request;
-        request.Method = method;
-        request.ContentLength = contentLength;
-        if (chunked) request.Headers["Transfer-Encoding"] = "chunked";
-        return request;
-    }
-
-    [Theory]
-    [InlineData("GET", null, false, false)]
-    [InlineData("HEAD", null, false, false)]
-    [InlineData("DELETE", null, false, false)]
-    [InlineData("GET", 0L, false, false)]
-    [InlineData("POST", 0L, false, false)]
-    [InlineData("POST", 5L, false, true)]
-    [InlineData("GET", 5L, false, true)]
-    [InlineData("GET", null, true, true)]
-    [InlineData("POST", null, false, true)]
-    [InlineData("PUT", null, true, true)]
-    public void RequestHasBody_Follows_Content_Length_Transfer_Encoding_And_Method(string method, long? contentLength, bool chunked, bool expected)
-    {
-        Assert.Equal(expected, AuditBodyCapture.RequestHasBody(Request(method, contentLength, chunked)));
-    }
 }

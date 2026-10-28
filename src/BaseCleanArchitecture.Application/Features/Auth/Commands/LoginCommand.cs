@@ -4,33 +4,17 @@ using MediatR;
 
 namespace BaseCleanArchitecture.Application.Features.Auth.Commands;
 
-public sealed record LoginCommand : IRequest<AuthTokenDto>
-{
-    public string Username { get; }
-    public string Password { get; }
+public sealed record LoginCommand(string Email, string Password) : IRequest<Result<AuthTokenDto>>;
 
-    public LoginCommand(string username, string password)
-    {
-        Username = username;
-        Password = password;
-    }
-}
-
-public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthTokenDto>
+public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthTokenDto>>
 {
     private readonly IAuthService _authService;
-    private readonly IJwtTokenService _jwtTokenService;
 
-    public LoginCommandHandler(IAuthService authService, IJwtTokenService jwtTokenService)
+    public LoginCommandHandler(IAuthService authService)
     {
         _authService = authService;
-        _jwtTokenService = jwtTokenService;
     }
 
-    public async Task<AuthTokenDto> Handle(LoginCommand request, CancellationToken cancellationToken)
-    {
-        var user = await _authService.LoginAsync(request.Username, request.Password, cancellationToken);
-        var token = _jwtTokenService.GenerateToken(user);
-        return token;
-    }
+    public Task<Result<AuthTokenDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
+        => _authService.LoginAsync(request.Email, request.Password, cancellationToken);
 }

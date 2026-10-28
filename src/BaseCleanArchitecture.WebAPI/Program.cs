@@ -1,4 +1,5 @@
 using BaseCleanArchitecture.Application;
+using BaseCleanArchitecture.Application.Abstractions.Authentication;
 using BaseCleanArchitecture.Application.Behaviors;
 using BaseCleanArchitecture.Infrastructure;
 using BaseCleanArchitecture.Infrastructure.Auth;
@@ -9,6 +10,7 @@ using MediatR;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -36,7 +38,8 @@ try
 
     // Add services to the container.
 
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
@@ -51,6 +54,19 @@ try
     builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
     var app = builder.Build();
+
+    // Sync permissions declared in code, then the initial Admin from the AdminSeed section (needs the migrations
+    // applied; the API still starts if not).
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<IPermissionSeeder>().SeedAsync();
+        await scope.ServiceProvider.GetRequiredService<IAdminSeeder>().SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Seeding failed. Apply the database migrations, then restart.");
+    }
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())

@@ -1,44 +1,44 @@
 using BaseCleanArchitecture.Application.Abstractions.Authentication;
 using BaseCleanArchitecture.Application.Common.Models;
 using BaseCleanArchitecture.Application.Features.Auth.Models;
+using BaseCleanArchitecture.Domain.Enums;
 using MediatR;
 
 namespace BaseCleanArchitecture.Application.Features.Auth.Commands;
 
-public sealed record RegisterCommand : IRequest<Result<AuthTokenDto>>
-{
-    public string Username { get; }
-    public string Email { get; }
-    public string Password { get; }
-    public string FullName { get; }
-    public string? PhoneNumber { get; }
-
-    public RegisterCommand(string username, string email, string password, string fullName, string? phoneNumber)
-    {
-        Username = username;
-        Email = email;
-        Password = password;
-        FullName = fullName;
-        PhoneNumber = phoneNumber;
-    }
-}
+public sealed record RegisterCommand(
+    string Username,
+    string Email,
+    string Password,
+    string FullName,
+    string? PhoneNumber = null,
+    DateOnly? DateOfBirth = null,
+    Gender Gender = Gender.Unknown,
+    string? Address = null,
+    RoleType Role = RoleType.Customer) : IRequest<Result<AuthTokenDto>>;
 
 public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<AuthTokenDto>>
 {
     private readonly IAuthService _authService;
-    private readonly IJwtTokenService _jwtTokenService;
 
-    public RegisterCommandHandler(IAuthService authService, IJwtTokenService jwtTokenService)
+    public RegisterCommandHandler(IAuthService authService)
     {
         _authService = authService;
-        _jwtTokenService = jwtTokenService;
     }
 
-    public async Task<Result<AuthTokenDto>> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public Task<Result<AuthTokenDto>> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        var dto = new RegisterDto(request.Username, request.Email, request.Password, request.FullName, request.PhoneNumber);
-        var user = await _authService.RegisterAsync(dto, cancellationToken);
-        var token = _jwtTokenService.GenerateToken(user);
-        return Result<AuthTokenDto>.Success(token);
+        var dto = new RegisterDto(
+            request.Username,
+            request.Email,
+            request.Password,
+            request.FullName,
+            request.PhoneNumber,
+            request.DateOfBirth,
+            request.Gender,
+            request.Address,
+            request.Role);
+
+        return _authService.RegisterAsync(dto, cancellationToken);
     }
 }

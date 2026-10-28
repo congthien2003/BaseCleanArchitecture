@@ -32,8 +32,5 @@ namespace BaseCleanArchitecture.WebAPI.Controllers.Features
             var result = await _mediator.Send(new GetAuditLogByIdQuery(id), cancellationToken);
             return ToActionResult(result);
         }
-
-        private IActionResult ToActionResult(BaseCleanArchitecture.Application.Common.Models.IResult result) =>
-            result.IsSuccess ? Ok(result) : StatusCode(result.StatusCode, result);
     }
 }

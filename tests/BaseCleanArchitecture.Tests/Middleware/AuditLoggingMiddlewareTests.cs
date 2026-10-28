@@ -255,4 +255,15 @@ public class AuditLoggingMiddlewareTests
 
         Assert.Equal("{\"a\":1}", server.Encryptor.Decrypt(log.RequestBody!));
     }
+
+    [Fact]
+    public async Task Auth_Endpoint_Bodies_Are_Redacted()
+    {
+        await using var server = await AuditTestServer.StartAsync();
+
+        await server.Client.PostAsync("/api/auth/login", Json("{\"email\":\"a@b.c\",\"password\":\"hunter2\"}"));
+        var log = await server.WaitForLogAsync();
+
+        Assert.Equal("[redacted]", server.Encryptor.Decrypt(log.RequestBody!));
+    }
 }

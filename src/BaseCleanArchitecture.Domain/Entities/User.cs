@@ -1,4 +1,5 @@
 using BaseCleanArchitecture.Domain.Abtractions;
+using BaseCleanArchitecture.Domain.Enums;
 using BaseCleanArchitecture.Domain.Events.User;
 
 namespace BaseCleanArchitecture.Domain.Entities;
@@ -15,10 +16,13 @@ public class User : EntityAuditBase<Guid>
     public bool IsPhoneNumberConfirmed { get; set; }
     public bool IsTwoFactorEnabled { get; set; }
     public DateTimeOffset? LastLoginAt { get; set; }
-    public string? RefreshToken { get; set; }
-    public DateTimeOffset? RefreshTokenExpiry { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
+    public Gender Gender { get; set; } = Gender.Unknown;
+    public string? Address { get; set; }
+    public UserStatus Status { get; set; } = UserStatus.Active;
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     public User() : base(Guid.CreateVersion7())
     {
@@ -43,6 +47,14 @@ public class User : EntityAuditBase<Guid>
     }
 
 
+
+    public bool CanLogin => !IsDeleted && Status == UserStatus.Active;
+
+    public void SetPassword(string hash, string salt)
+    {
+        PasswordHash = hash;
+        Salt = salt;
+    }
 
     /// <summary>
     /// Records a login event — updates LastLoginAt and raises UserLoggedInEvent

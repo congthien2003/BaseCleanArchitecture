@@ -39,7 +39,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PhoneNumber)
             .HasMaxLength(20);
 
-        builder.Property(u => u.RefreshToken)
-            .HasMaxLength(500);
+        builder.Property(u => u.Address)
+            .HasMaxLength(300);
     }
 }

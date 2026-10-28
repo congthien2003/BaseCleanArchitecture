@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using BaseCleanArchitecture.Application.Common.Models;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,5 +14,9 @@ namespace BaseCleanArchitecture.WebAPI.Controllers.Base
         {
             _mediator = mediator;
         }
+
+        /// <summary>Responds with the status code carried by the handler result (200, 201, 400, 401, 409, ...).</summary>
+        protected IActionResult ToActionResult(Application.Common.Models.IResult result) =>
+            StatusCode(result.StatusCode, result);
     }
 }

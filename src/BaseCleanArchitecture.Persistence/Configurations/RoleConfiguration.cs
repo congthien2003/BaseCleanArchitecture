@@ -39,6 +39,14 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
                 Description = "Default customer role",
                 CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
                 IsDeleted = false
+            },
+            new Role
+            {
+                Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                Name = "Sales",
+                Description = "Sales staff role",
+                CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                IsDeleted = false
             }
         );
     }

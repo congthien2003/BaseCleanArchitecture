@@ -15,6 +15,9 @@ namespace BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 /// </summary>
 public sealed class AuditLoggingMiddleware
 {
+    private const string RedactedBody = "[redacted]";
+    private static readonly PathString SensitivePathPrefix = new("/api/auth");
+
     private readonly RequestDelegate _next;
     private readonly ILogger<AuditLoggingMiddleware> _logger;
 
@@ -145,6 +148,13 @@ public sealed class AuditLoggingMiddleware
         var errorMessage = exception is not null
             ? AuditErrorMessage.FromException(exception)
             : statusCode >= 400 ? AuditErrorMessage.FromResponse(responseText, context.Response.ContentType) : null;
+
+        // Credentials (passwords, OTPs) and tokens travel in /api/auth bodies: keep the fact of the call, never the content.
+        if (context.Request.Path.StartsWithSegments(SensitivePathPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            requestText = requestText is null ? null : RedactedBody;
+            responseText = responseText is null ? null : RedactedBody;
+        }
 
         var user = currentUser.CurrentUser; // read now: authentication has run by the time the pipeline returns
         var changes = auditContext.Changes;

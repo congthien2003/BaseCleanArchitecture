@@ -87,11 +87,14 @@ public sealed class AuditLoggingMiddleware
 
             request.EnableBuffering();
 
-            var buffer = new byte[maxBytes];
+            // Grow as the body arrives: MaxBodyBytes is only a cap, never an up-front allocation.
+            using var captured = new MemoryStream();
+            var chunk = new byte[8192];
             var read = 0;
             int n;
-            while (read < maxBytes && (n = await request.Body.ReadAsync(buffer.AsMemory(read, maxBytes - read))) > 0)
+            while (read < maxBytes && (n = await request.Body.ReadAsync(chunk.AsMemory(0, Math.Min(chunk.Length, maxBytes - read)))) > 0)
             {
+                captured.Write(chunk, 0, n);
                 read += n;
             }
 
@@ -102,7 +105,7 @@ public sealed class AuditLoggingMiddleware
             }
 
             request.Body.Position = 0;
-            return new CapturedRequest(buffer[..read], total);
+            return new CapturedRequest(captured.ToArray(), total);
         }
         catch (Exception ex)
         {
@@ -159,10 +162,10 @@ public sealed class AuditLoggingMiddleware
             AuditType = exception is not null ? AuditType.Exception : AuditType.Activity,
             StatusCode = statusCode,
             ErrorMessage = errorMessage,
-            HttpMethod = Truncate(context.Request.Method, 10),
-            Path = Truncate(context.Request.PathBase.Add(context.Request.Path).Value ?? string.Empty, 2048),
+            HttpMethod = Sanitize(context.Request.Method, 10),
+            Path = Sanitize(context.Request.PathBase.Add(context.Request.Path).Value ?? string.Empty, 2048),
             UserId = user.Id == Guid.Empty ? null : user.Id,
-            Username = string.IsNullOrEmpty(user.Username) ? null : user.Username,
+            Username = string.IsNullOrEmpty(user.Username) ? null : Sanitize(user.Username, 256),
             DurationMs = durationMs,
             RequestBody = requestText is null ? null : encryptor.Encrypt(requestText),
             ResponseBody = responseText is null ? null : encryptor.Encrypt(responseText),
@@ -173,5 +176,10 @@ public sealed class AuditLoggingMiddleware
         };
     }
 
-    private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max];
+    // PostgreSQL text columns reject U+0000, so strip it before fitting the column size.
+    private static string Sanitize(string value, int max)
+    {
+        value = value.Replace("\0", string.Empty);
+        return value.Length <= max ? value : value[..max];
+    }
 }

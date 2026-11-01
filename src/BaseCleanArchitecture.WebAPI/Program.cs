@@ -2,6 +2,9 @@ using BaseCleanArchitecture.Application;
 using BaseCleanArchitecture.Application.Behaviors;
 using BaseCleanArchitecture.Infrastructure;
 using BaseCleanArchitecture.Infrastructure.Auth;
+using BaseCleanArchitecture.Infrastructure.Security;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 using BaseCleanArchitecture.Persistence;
 using BaseCleanArchitecture.WebAPI.Middleware;
 using BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
@@ -50,6 +53,28 @@ try
 
     builder.Services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
+    // Trust X-Forwarded-For only from configured proxies (loopback is trusted by default),
+    // so AdaptiveSecurityMiddleware sees the real client IP and clients cannot spoof it.
+    var adaptiveSecurity = builder.Configuration
+        .GetSection(AdaptiveSecurityOptions.SectionName)
+        .Get<AdaptiveSecurityOptions>() ?? new AdaptiveSecurityOptions();
+
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.ForwardLimit = 1;
+
+        foreach (var proxy in adaptiveSecurity.TrustedProxies)
+        {
+            options.KnownProxies.Add(IPAddress.Parse(proxy));
+        }
+
+        foreach (var network in adaptiveSecurity.TrustedNetworks)
+        {
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+        }
+    });
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
@@ -64,6 +89,10 @@ try
                 .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
         });
     }
+
+    // First: resolve the real client IP, then reject blocked IPs before any other work happens.
+    app.UseForwardedHeaders();
+    app.UseMiddleware<AdaptiveSecurityMiddleware>();
 
     // Before the exception handler so the audit log sees the final response (and the handled exception).
     app.UseMiddleware<AuditLoggingMiddleware>();

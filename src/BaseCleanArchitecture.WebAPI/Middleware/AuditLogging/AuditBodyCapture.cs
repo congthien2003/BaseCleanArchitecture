@@ -5,6 +5,25 @@ namespace BaseCleanArchitecture.WebAPI.Middleware.AuditLogging;
 public static class AuditBodyCapture
 {
     /// <summary>
+    /// Whether the request carries a body: a declared Content-Length decides it; otherwise chunked encoding means yes,
+    /// and without either only methods that normally carry a payload (not GET/HEAD/DELETE) are assumed to have one.
+    /// </summary>
+    public static bool RequestHasBody(HttpRequest request)
+    {
+        if (request.ContentLength.HasValue)
+        {
+            return request.ContentLength.Value > 0;
+        }
+
+        if (request.Headers.TransferEncoding.ToString().Contains("chunked", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return !(HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method) || HttpMethods.IsDelete(request.Method));
+    }
+
+    /// <summary>
     /// Turns a captured body into the text to store. <paramref name="captured"/> holds at most the first bytes of the body;
     /// <paramref name="totalBytes"/> is the real size. Returns null for an empty body.
     /// </summary>

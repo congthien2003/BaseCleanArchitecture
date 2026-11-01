@@ -6,6 +6,7 @@ using BaseCleanArchitecture.Infrastructure.Caching;
 using BaseCleanArchitecture.Infrastructure.Email;
 using BaseCleanArchitecture.Infrastructure.Messaging;
 using BaseCleanArchitecture.Infrastructure.OpenTelemetry;
+using BaseCleanArchitecture.Infrastructure.Security;
 using BaseCleanArchitecture.Infrastructure.Services.Events;
 using BaseCleanArchitecture.Persistence;
 using Microsoft.Extensions.Caching.Memory;
@@ -36,6 +37,9 @@ namespace BaseCleanArchitecture.Infrastructure
 
             // Audit log (channel + background worker + encryption)
             services.AddAuditServices(configuration);
+
+            // Adaptive security (IP blocking + scanner detection)
+            services.AddAdaptiveSecurity(configuration);
 
             // Domain Event Dispatcher
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();

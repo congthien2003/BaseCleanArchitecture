@@ -74,6 +74,11 @@ public sealed class AuditLoggingMiddleware
     {
         try
         {
+            if (!AuditBodyCapture.RequestHasBody(request))
+            {
+                return new CapturedRequest([], 0);
+            }
+
             // Binary uploads are neither read nor buffered; only their declared size is kept for the placeholder.
             if (!AuditBodyCapture.IsTextContentType(request.ContentType))
             {
